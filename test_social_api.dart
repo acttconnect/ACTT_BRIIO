@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 void main() async {
@@ -12,7 +11,7 @@ void main() async {
   for (var url in urls) {
     try {
       var res = await http.get(Uri.parse(url));
-      print('URL: $url, Status: ${res.statusCode}, Body: ${res.body.length > 100 ? res.body.substring(0, 100) + '...' : res.body}');
+      print('URL: $url, Status: ${res.statusCode}, Body: ${res.body.length > 100 ? '${res.body.substring(0, 100)}...' : res.body}');
     } catch(e) {
       print('URL: $url Error: $e');
     }

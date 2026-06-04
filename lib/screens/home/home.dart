@@ -23,7 +23,6 @@ import '../../utils/const.dart';
 import '../../utils/globel_veriable.dart';
 import '../pages/categories/subCategory.dart';
 import '../pages/search_page.dart';
-import '../pages/subscription_screen.dart';
 import 'product_detail_page.dart';
 
 class HomePage extends StatefulWidget {

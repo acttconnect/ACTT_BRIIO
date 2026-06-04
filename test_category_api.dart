@@ -1,5 +1,4 @@
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 void main() async {
   var url1 = Uri.parse('https://briio.in/api/Categorie');

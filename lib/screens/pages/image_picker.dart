@@ -2,11 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../classes/design_upload.dart';
-import '../../utils/colors.dart';
 import '../../widgets/custom_loading.dart';
 
 class UploadImageD extends StatefulWidget {

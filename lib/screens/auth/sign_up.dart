@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:briio_application/screens/auth/sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:briio_application/utils/colors.dart';
-import 'package:briio_application/widgets/custom_loading.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';

@@ -1,7 +1,5 @@
-import 'package:briio_application/screens/pages/savedaddress.dart';
 import 'package:briio_application/screens/pages/update_profile.dart';
 import 'package:briio_application/widgets/custom_loading.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';

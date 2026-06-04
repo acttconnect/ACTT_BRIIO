@@ -18,7 +18,6 @@ import '../../widgets/add_cart.dart';
 import '../../widgets/big_text.dart';
 import '../pages/cart_page.dart';
 import '../pages/savedaddress.dart';
-import '../pages/subscription_screen.dart';
 
 class ProductDetailsPage extends StatefulWidget {
   const ProductDetailsPage({

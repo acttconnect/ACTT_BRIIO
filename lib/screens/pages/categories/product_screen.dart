@@ -11,7 +11,6 @@ import 'package:briio_application/screens/home/product_detail_page.dart';
 import 'package:briio_application/screens/pages/categories/filter_page.dart';
 import '../../../utils/pdf_generator.dart';
 import 'package:briio_application/classes/wishlist.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ProductScreen extends StatefulWidget {
   final int categoryId;
