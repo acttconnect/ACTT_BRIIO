@@ -28,6 +28,7 @@ class CartItem {
   String? quantity;
   String? goldPurity;
   String? bangleSize;
+  String? price;
   Products? products;
 
   CartItem({
@@ -36,6 +37,7 @@ class CartItem {
     this.quantity,
     this.goldPurity,
     this.bangleSize,
+    this.price,
     this.products,
   });
 
@@ -46,6 +48,7 @@ class CartItem {
       quantity: json['quantity']?.toString(),
       goldPurity: json['gold_purity']?.toString(),
       bangleSize: json['bangle_size']?.toString(),
+      price: json['price']?.toString(),
       products: json['products'] != null ? Products.fromJson(json['products']) : null,
     );
   }

@@ -40,7 +40,9 @@ class AuthLogin {
 
   static logout() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.clear();
+    await prefs.clear(); // wait for clear
+    prefs.setBool('isLoggedIn', false); // explicitly set to false just in case
+    GlobalK.clearAll(); // Clear all static session variables
     Get.offAll(() => const SignIn());
   }
 }

@@ -2,6 +2,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
@@ -14,6 +15,7 @@ import '../../controller/auth_controller.dart';
 import '../../model/new_detail_page_model.dart';
 import '../../utils/colors.dart';
 import '../../utils/globel_veriable.dart';
+import '../../utils/pdf_generator.dart';
 import '../../widgets/add_cart.dart';
 import '../../widgets/big_text.dart';
 import '../pages/cart_page.dart';
@@ -37,6 +39,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   int _currentIndex = 0;
   bool isLoader = false;
   bool isLoading = false;
+  NewDetailPageModel? _productData;
 
   var c;
 
@@ -132,7 +135,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
           IconButton(
             onPressed: () {
-              _showShareBottomSheet(context, null);
+              if (_productData != null && _productData!.product != null && _productData!.product!.isNotEmpty) {
+                PdfGenerator.showShareBottomSheet(
+                  context,
+                  _productData!.product!,
+                  GlobalK.productName ?? 'Product',
+                );
+              }
             },
             icon: Icon(
               Icons.ios_share,
@@ -157,9 +166,12 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         child: FutureBuilder<NewDetailPageModel>(
             future: ProductById.getProductById(),
             builder: (context, snapshot) {
-              print(snapshot.data);
-              print(snapshot.connectionState);
               if (snapshot.hasData && snapshot.data?.product != null && snapshot.data!.product!.isNotEmpty) {
+                if (_productData == null) {
+                  SchedulerBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _productData = snapshot.data);
+                  });
+                }
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -244,7 +256,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                                                 child: CircularProgressIndicator(),
                                               ),
                                               errorWidget: (context, url, error) => const Icon(Icons.error),
-                                              fit: BoxFit.cover,
+                                              fit: BoxFit.contain,
                                             ),
                                           ),
                                         ),

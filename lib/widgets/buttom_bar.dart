@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../classes/whatsaap.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../screens/home/home.dart';
 import '../screens/pages/image_picker.dart';
 import '../screens/pages/person_profile.dart';
@@ -49,15 +50,26 @@ class _HomePage5State extends State<HomePage5> {
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.transparent,
-          onPressed: () {
+        floatingActionButton: GestureDetector(
+          onTap: () {
             WhatsappUrl.launchWhatsapp(
               number: "7970099707",
               message: 'Type your query...',
             );
           },
-          child: Image.asset('assets/wapp.png'),
+          child: Container(
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
+              color: Color(0xFF25D366),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              FontAwesomeIcons.whatsapp,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
         ),
         backgroundColor: Colors.white,
         body: pages[pageIndex],

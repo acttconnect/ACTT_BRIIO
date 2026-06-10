@@ -11,11 +11,14 @@ import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import '../../widgets/shimmer_loading.dart';
 import '../pages/categories/main_category_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../classes/categories.dart';
+import '../../classes/whatsaap.dart';
+import '../../classes/wishlist.dart';
 import '../../model/catogries_model.dart';
 import '../../model/home_model.dart';
 import '../../utils/colors.dart';
@@ -24,6 +27,8 @@ import '../../utils/globel_veriable.dart';
 import '../pages/categories/subCategory.dart';
 import '../pages/search_page.dart';
 import 'product_detail_page.dart';
+import '../auth/sign_up.dart';
+import '../auth/sign_in.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -178,7 +183,7 @@ class _HomePageState extends State<HomePage> {
         child: Scaffold(
           backgroundColor: Colors.white,
           drawer: Drawer(
-            backgroundColor: Colors.grey.shade100,
+            backgroundColor: Colors.grey.shade200,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.zero,
             ),
@@ -187,37 +192,43 @@ class _HomePageState extends State<HomePage> {
           appBar: AppBar(
             surfaceTintColor: Colors.white,
             centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.black),
+            iconTheme: IconThemeData(color: Colors.grey.shade800),
             backgroundColor: Colors.white,
             shadowColor: Colors.white,
             elevation: 0,
-            leadingWidth: 100,
+            leadingWidth: 90,
             leading: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Builder(
-                  builder: (context) => IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () {
+                  builder: (context) => InkWell(
+                    onTap: () {
                       Scaffold.of(context).openDrawer();
                     },
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8.0, right: 4.0),
+                      child: Icon(Icons.menu, size: 26, color: Colors.grey.shade800),
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.grid_view_outlined, size: 24),
-                  onPressed: () {
+                InkWell(
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const MainCategoryScreen()),
                     );
                   },
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4.0, right: 8.0),
+                    child: Icon(CupertinoIcons.square_grid_2x2, size: 24, color: Colors.grey.shade800),
+                  ),
                 ),
               ],
             ),
             title: Image.asset(
               'assets/blg.png',
-              height: 28,
-              fit: BoxFit.contain,
+              height: 45,
             ),
             actions: [
               IconButton(
@@ -227,10 +238,10 @@ class _HomePageState extends State<HomePage> {
                       MaterialPageRoute(
                           builder: (context) => const SearchPage()));
                 },
-                icon: const Icon(Icons.search),
+                icon: Icon(CupertinoIcons.search, color: Colors.grey.shade800, size: 24),
               ),
               IconButton(
-                icon: const Icon(Icons.notifications_outlined),
+                icon: Icon(CupertinoIcons.bell, color: Colors.grey.shade800, size: 24),
                 onPressed: () {
                   Navigator.push(
                       context,
@@ -238,6 +249,7 @@ class _HomePageState extends State<HomePage> {
                           builder: (context) => const NotificationPage()));
                 },
               ),
+              const SizedBox(width: 4),
             ],
           ),
           body: Column(
@@ -406,7 +418,7 @@ class _HomePageState extends State<HomePage> {
                                                                     .image!
                                                                     .toString()
                                                                 : '${imgPath}category/${category.image!.toString()}',
-                                                            fit: BoxFit.cover,
+                                                            fit: BoxFit.contain,
                                                             placeholder: (context,
                                                                     url) =>
                                                                 const ShimmerLoading(),
@@ -500,7 +512,7 @@ class _HomePageState extends State<HomePage> {
                                     crossAxisCount: 2,
                                     crossAxisSpacing: 10,
                                     mainAxisSpacing: 10,
-                                    childAspectRatio: 0.8,
+                                    childAspectRatio: 1.0,
                                   ),
                                   itemCount: snapshot.data!.bestseller!.length,
                                   itemBuilder: (context, index) {
@@ -524,33 +536,52 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         child: Column(
                                           children: [
-                                            Expanded(
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(8.0),
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                  child: CachedNetworkImage(
-                                                    imageUrl: product.image
-                                                            .toString()
-                                                            .startsWith('http')
-                                                        ? product.image
-                                                            .toString()
-                                                        : "${imgPath}products/${product.image}",
-                                                    fit: BoxFit.cover,
-                                                    memCacheWidth: 400,
-                                                    placeholder: (context,
-                                                            url) =>
-                                                        const ShimmerLoading(),
-                                                    errorWidget: (context, url,
-                                                            error) =>
-                                                        const Icon(Icons
-                                                            .image_not_supported),
-                                                  ),
+                                              Expanded(
+                                                child: Stack(
+                                                  children: [
+                                                    Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: ClipRRect(
+                                                        borderRadius: BorderRadius.circular(16),
+                                                        child: CachedNetworkImage(
+                                                          imageUrl: product.image.toString().startsWith('http')
+                                                              ? product.image.toString()
+                                                              : "${imgPath}products/${product.image}",
+                                                          fit: BoxFit.contain,
+                                                          memCacheWidth: 400,
+                                                          placeholder: (context, url) => const ShimmerLoading(),
+                                                          errorWidget: (context, url, error) => const Icon(Icons.image_not_supported),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Positioned(
+                                                      top: 14,
+                                                      right: 14,
+                                                      child: GestureDetector(
+                                                        onTap: () async {
+                                                          await Wishlist.getAddWishlist(
+                                                              product_id: product.id!.toString(),
+                                                              productVarientId: '1');
+                                                        },
+                                                        child: Container(
+                                                          width: 26,
+                                                          height: 26,
+                                                          alignment: Alignment.center,
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.white.withOpacity(0.9),
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                          child: const Icon(
+                                                            Icons.favorite_border_outlined,
+                                                            color: Colors.red,
+                                                            size: 18,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
-                                            ),
                                             Padding(
                                               padding:
                                                   const EdgeInsets.symmetric(
@@ -638,7 +669,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: CachedNetworkImage(
                                                         imageUrl:
                                                             _imageUrls[index],
-                                                        fit: BoxFit.cover,
+                                                        fit: BoxFit.contain,
                                                         placeholder: (context,
                                                                 url) =>
                                                             const ShimmerLoading(),
@@ -811,20 +842,9 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           // bottomNavigationBar: const BottomBars(),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              // Add WhatsApp functionality here
-            },
-            backgroundColor: Colors.green,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: const Icon(
-              FontAwesomeIcons.whatsapp,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
+          // floatingActionButton: GestureDetector(
+          //  ...
+          // ),
         ));
   }
 
@@ -964,150 +984,107 @@ class _HomePageState extends State<HomePage> {
   Widget _buildUi() {
     return SafeArea(
       child: Container(
-        color: Colors.grey
-            .shade100, // Make sure whole drawer background is grey to show gaps
+        color: Colors.grey.shade200,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              margin: const EdgeInsets.only(bottom: 6),
+              margin: const EdgeInsets.only(bottom: 8, right: 20),
               color: Colors.white,
               child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                horizontalTitleGap: 4,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                minLeadingWidth: 10,
                 leading: Text(
                   '₹',
                   style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 18,
                       color: Colors.amber.shade700,
-                      fontWeight: FontWeight.bold),
+                      fontWeight: FontWeight.w600),
                 ),
                 title: Text(
                   'LIVE RATES',
                   style: GoogleFonts.poppins(
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w500,
                       color: Colors.grey.shade600),
                 ),
-                trailing: const Icon(Icons.arrow_forward_ios,
-                    size: 18, color: Colors.black87),
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 14, color: Colors.grey.shade500),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
             ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 15, 20, 10),
-              color: Colors.white,
-              child: Text(
-                'My Account',
-                style: GoogleFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            if (GlobalK.userFName == null || GlobalK.userFName!.isEmpty) ...[
+            if (GlobalK.userId == null) ...[
               Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                color: Colors.white,
+                color: Colors.transparent,
                 child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                   title: Text(
-                    'Login',
+                    'My Account',
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade800,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: Navigate to Login
-                  },
                 ),
               ),
-              Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                color: Colors.white,
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  title: Text(
-                    'Register',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade800,
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context); // close drawer
+                  Get.to(() => const SignIn());
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8, right: 20),
+                  color: Colors.white,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    title: Text(
+                      'Login',
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: Navigate to Register
-                  },
                 ),
               ),
-            ] else ...[
-              Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.fromLTRB(20, 5, 20, 20),
-                color: Colors.white,
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 26,
-                      backgroundColor: Colors.grey.shade200,
-                      child: Text(
-                        GlobalK.userFName![0].toUpperCase(),
-                        style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87),
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context); // close drawer
+                  Get.to(() => const SignUp());
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8, right: 20),
+                  color: Colors.white,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    title: Text(
+                      'Register',
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
                       ),
                     ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            GlobalK.userFName ?? '',
-                            style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (GlobalK.userEmail != null &&
-                              GlobalK.userEmail!.isNotEmpty)
-                            Text(
-                              GlobalK.userEmail!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 13, color: Colors.grey[500]),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ],
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-              color: Colors.grey.shade50,
-              child: Text(
-                'OUR COLLECTION',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade600,
+              color: Colors.transparent,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                title: Text(
+                  GlobalK.userId == null ? 'OUR COLLECTION' : 'CATEGORY',
+                  style: GoogleFonts.poppins(
+                    fontSize: GlobalK.userId == null ? 18 : 20,
+                    fontWeight: GlobalK.userId == null ? FontWeight.w400 : FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
                 ),
               ),
             ),
@@ -1132,20 +1109,22 @@ class _HomePageState extends State<HomePage> {
                     itemBuilder: (context, index) {
                       if (index == snapshot.data!.data!.length) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          color:
-                              Colors.transparent, // Background is already grey
+                          padding: const EdgeInsets.symmetric(vertical: 30),
+                          color: Colors.transparent, // Background is already grey
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Icon(Icons.workspace_premium,
-                                  color: Colors.grey.shade400, size: 28),
-                              const SizedBox(width: 10),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Image.asset('assets/bis_logo_grey.png', height: 24, fit: BoxFit.contain, color: Colors.grey.shade500),
+                              ),
+                              const SizedBox(width: 8),
                               Text(
                                 'Bis Hallmarked Jewellery',
                                 style: GoogleFonts.poppins(
                                   fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w500,
                                   color: Colors.grey.shade500,
                                 ),
                               ),
@@ -1167,20 +1146,18 @@ class _HomePageState extends State<HomePage> {
                               ));
                         },
                         child: Container(
-                          margin: const EdgeInsets.only(
-                              bottom: 4), // Margin creates the exact grey gap!
+                          margin: const EdgeInsets.only(bottom: 8, right: 20),
                           color: Colors.white,
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 0),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                             title: Text(
                                 snapshot.data!.data![index].name!.toString(),
                                 style: GoogleFonts.poppins(
-                                    fontSize: 16,
+                                    fontSize: 17,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.grey.shade700)),
+                                    color: Colors.grey.shade600)),
                             trailing: Icon(Icons.arrow_forward_ios,
-                                size: 14, color: Colors.grey[400]),
+                                size: 14, color: Colors.grey.shade500),
                           ),
                         ),
                       );

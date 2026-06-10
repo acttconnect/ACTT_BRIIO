@@ -57,7 +57,7 @@ class _CatogriesByProductState extends State<CatogriesByProduct> {
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
                             maxCrossAxisExtent: 350,
-                            childAspectRatio: 5 / 11,
+                            childAspectRatio: 1.0,
                             crossAxisSpacing: 2,
                             mainAxisSpacing: 2),
                     //scrollDirection: Axis.horizontal,
@@ -98,7 +98,7 @@ class _CatogriesByProductState extends State<CatogriesByProduct> {
                                             image: NetworkImage(
                                               '${imgPath}products/${snapshot.data!.product![index].image!.toString()}',
                                             ),
-                                            fit: BoxFit.cover)),
+                                            fit: BoxFit.contain)),
                                     child: Align(
                                         alignment: Alignment.topRight,
                                         child: GestureDetector(

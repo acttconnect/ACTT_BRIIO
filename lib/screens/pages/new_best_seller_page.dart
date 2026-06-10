@@ -79,7 +79,7 @@ class _NewBestSellerState extends State<NewBestSeller> {
                                         image: NetworkImage(
                                           '${imgPath}products/${snapshot.data!.bestseller![index].image!.toString()}',
                                         ),
-                                        fit: BoxFit.cover)),
+                                        fit: BoxFit.contain)),
                                 child: Align(
                                   alignment: Alignment.topRight,
                                   child: GestureDetector(

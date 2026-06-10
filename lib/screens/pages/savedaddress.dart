@@ -9,6 +9,7 @@ import '../../model/address_model.dart';
 import '../../utils/cart_order.dart';
 import '../../utils/const.dart';
 import '../../utils/globel_veriable.dart';
+import '../../utils/payment_service.dart';
 
 class SavedAddress extends StatefulWidget {
   final bool forOrder;
@@ -19,6 +20,7 @@ class SavedAddress extends StatefulWidget {
   final String? bangleSize;
   final String? weight;
   final String instruction;
+  final double amount;
 
   const SavedAddress(
       {super.key,
@@ -29,6 +31,7 @@ class SavedAddress extends StatefulWidget {
       this.weight,
       this.isCartOrder,
       this.cartId,
+      this.amount = 0.0,
       required this.instruction});
 
   @override
@@ -45,6 +48,64 @@ class _SavedAddressState extends State<SavedAddress> {
   final pin = TextEditingController();
   final addKey = GlobalKey<FormState>();
   final c = Get.put(MyController());
+  late PaymentService _paymentService;
+  
+  // To hold temporary order data during payment
+  int? _pendingAddressId;
+  int? _pendingProductId;
+  String? _pendingGoldPurity;
+  String? _pendingBangleSize;
+  String? _pendingWeight;
+  String? _pendingInstruction;
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentService = PaymentService(
+      onSuccess: (response) {
+        _processOrder(paymentId: response.paymentId ?? "");
+      },
+      onFailure: (errorMessage) {
+        c.isCartLoading.value = false;
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _paymentService.dispose();
+    super.dispose();
+  }
+
+  void _processOrder({required String paymentId}) {
+    if (_pendingAddressId == null) return;
+    
+    if (widget.isCartOrder ?? false) {
+      CartOrder.placeOrder(
+        productId: _pendingProductId ?? 0,
+        addressId: _pendingAddressId!.toString(),
+        goldPurity: _pendingGoldPurity ?? '22K',
+        bangleSize: _pendingBangleSize ?? 'Standard',
+        weight: _pendingWeight ?? '0',
+        instruction: _pendingInstruction ?? '',
+        totalAmount: widget.amount,
+        paymentMethod: 'Razorpay',
+        paymentId: paymentId,
+      );
+    } else {
+      submitOrder(
+        bangleSize: _pendingBangleSize!,
+        weight: _pendingWeight!,
+        goldPurity: _pendingGoldPurity!,
+        addressId: _pendingAddressId!,
+        productId: _pendingProductId!,
+        instruction: _pendingInstruction ?? '',
+        totalAmount: widget.amount,
+        paymentMethod: 'Razorpay',
+        paymentId: paymentId,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -410,22 +471,43 @@ class _SavedAddressState extends State<SavedAddress> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => widget.isCartOrder ?? false
-            ? CartOrder.placeOrder(
-                productId: widget.productId!,
-                addressId: item.id!.toInt(),
-                goldPurity: widget.goldPurity ?? '22K',
-                bangleSize: widget.bangleSize ?? 'Standard',
-                weight: widget.weight ?? '0',
-                instruction: widget.instruction,
-              )
-            : submitOrder(
-                bangleSize: widget.bangleSize!,
-                weight: widget.weight!,
-                goldPurity: widget.goldPurity!,
-                addressId: item.id!.toInt(),
-                productId: widget.productId!,
-                instruction: widget.instruction),
+        onTap: () async {
+          _pendingAddressId = item.id!.toInt();
+          _pendingProductId = widget.productId;
+          _pendingGoldPurity = widget.goldPurity;
+          _pendingBangleSize = widget.bangleSize;
+          _pendingWeight = widget.weight;
+          _pendingInstruction = widget.instruction;
+
+          c.isCartLoading.value = true;
+          
+          try {
+            var orderResponse = await http.post(
+              Uri.parse('${apiUrl}getOrderId'),
+              headers: {'Accept': 'application/json'},
+            );
+            
+            if (orderResponse.statusCode == 200 || orderResponse.statusCode == 201) {
+              var orderData = jsonDecode(orderResponse.body);
+              String? razorpayKey = orderData['order']?['razorpayId'];
+              
+              _paymentService.openCheckout(
+                amount: widget.amount > 0 ? widget.amount : 1.0,
+                contact: item.mobile ?? GlobalK.phone ?? '',
+                email: GlobalK.userEmail ?? GlobalK.mail ?? '',
+                orderName: 'Jewelry Order',
+                description: 'Payment for your order',
+                key: razorpayKey,
+              );
+            } else {
+              Fluttertoast.showToast(msg: 'Failed to initiate payment');
+            }
+          } catch (e) {
+            Fluttertoast.showToast(msg: 'Error: $e');
+          } finally {
+            c.isCartLoading.value = false;
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -481,77 +563,93 @@ class _SavedAddressState extends State<SavedAddress> {
       required String goldPurity,
       required int addressId,
       required int productId,
-      required String instruction}) async {
-    final encodedInstruction = Uri.encodeComponent(instruction);
-    final url =
-        '${apiUrl}submitOrderData?bangle_size=$bangleSize&weight=$weight&gold_purity=$goldPurity&address_id=$addressId&user_id=${GlobalK.userId}&product_id=$productId&intruction=$encodedInstruction';
-    print("This is the url: $url");
+      required String instruction,
+      required double totalAmount,
+      String paymentMethod = 'COD',
+      String paymentId = '0'}) async {
+    final url = '${apiUrl}submitOrderData';
     c.isCartLoading.value = true;
-    final response = await http.post(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['error'] == false) {
-        c.isCartLoading.value = false;
-        Fluttertoast.showToast(msg: 'Order Placed Successfully');
-        Get.back();
-        showDialog(
-          context: context,
-          barrierDismissible: true,
-          // Make the dialog non-dismissable by tapping outside
-          builder: (BuildContext context) {
-            return Dialog(
-              surfaceTintColor: Colors.white,
-              clipBehavior: Clip.none,
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: const Text(
-                      textAlign: TextAlign.center,
-                      'Thank You for choosing \n BRIIO!! \n Your order will be confirmed shortly.',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+    
+    final payload = {
+      "user_id": GlobalK.userId,
+      "product_id": productId,
+      "address_id": addressId,
+      "total": totalAmount,
+      "gold_purity": goldPurity,
+      "bangle_size": bangleSize,
+      "weight": weight,
+      "intruction": instruction,
+      "payment_method": paymentMethod,
+      "payment_id": paymentId
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        if (data['error'] == false) {
+          c.isCartLoading.value = false;
+          Fluttertoast.showToast(msg: 'Order Placed Successfully');
+          Get.back();
+          showDialog(
+            context: context,
+            barrierDismissible: true,
+            builder: (BuildContext context) {
+              return Dialog(
+                surfaceTintColor: Colors.white,
+                clipBehavior: Clip.none,
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Text(
+                        'Thank You for choosing \n BRIIO!! \n Your order will be confirmed shortly.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-// Auto close the dialog after 3 seconds
-        Future.delayed(Duration(seconds: 3), () {
-          if (mounted) {
-            Navigator.of(context).pop(true);
-          }
-        }); // Get.defaultDialog(
-        //   // title: '',
-        //   middleText: 'Thank You for choosing \n BRIIO!! \n Your order will be confirmed shortly.',
-        //   confirm: ElevatedButton(
-        //       onPressed: () => Get.back(),
-        //       child: const Text(
-        //         'OK',
-        //         style: TextStyle(color: Colors.black),
-        //       )),
-        // );
+                  ],
+                ),
+              );
+            },
+          );
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              Navigator.of(context).pop(true);
+            }
+          });
+        } else {
+          c.isCartLoading.value = false;
+          Get.back();
+          Fluttertoast.showToast(msg: data['message'] ?? 'Failed');
+        }
       } else {
         c.isCartLoading.value = false;
         Get.back();
-        Fluttertoast.showToast(msg: 'Failed');
+        Fluttertoast.showToast(msg: 'Internal server error: ${response.statusCode}');
       }
-    } else {
+    } catch (e) {
       c.isCartLoading.value = false;
       Get.back();
-      Fluttertoast.showToast(msg: 'Internal server error');
+      Fluttertoast.showToast(msg: 'An error occurred');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:briio_application/widgets/custom_loading.dart';
 import 'package:briio_application/utils/const.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -74,7 +75,7 @@ class CustomOrderTrackingScreen extends StatelessWidget {
                               fit: BoxFit.contain,
                               loadingBuilder: (context, child, loadingProgress) {
                                 if (loadingProgress == null) return child;
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(child: CustomLoading(width: 40, height: 40));
                               },
                             ),
                           ),

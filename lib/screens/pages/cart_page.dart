@@ -100,7 +100,7 @@ class _CartPageState extends State<CartPage> {
                       height: 200,
                       child: Image.asset(
                         'assets/empty_cart-removebg-preview.png',
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                       ),
                     ),
                     Text(

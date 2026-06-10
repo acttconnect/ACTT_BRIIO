@@ -300,7 +300,7 @@ class _SearchPageState extends State<SearchPage> {
                                     child: GridView.builder(
                                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisSpacing: 10,
-                                        childAspectRatio: 0.7,
+                                        childAspectRatio: 1.0,
                                         mainAxisSpacing: 10,
                                         crossAxisCount: 2,
                                       ),
@@ -325,9 +325,10 @@ class _SearchPageState extends State<SearchPage> {
       ),
       floatingActionButton: isSelectMode && selectedProductIds.isNotEmpty
           ? FloatingActionButton(
+              heroTag: null,
               onPressed: () async {
                 final selectedItems = currentSearchResults.where((p) => selectedProductIds.contains(p.id)).toList();
-                await PdfGenerator.generateAndShowPdf(context, selectedItems, 'Search Results');
+                PdfGenerator.showShareBottomSheet(context, selectedItems, 'Search Results');
               },
               backgroundColor: Colors.red.shade400,
               child: const Column(

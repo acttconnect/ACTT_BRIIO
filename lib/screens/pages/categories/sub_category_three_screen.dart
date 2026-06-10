@@ -13,6 +13,7 @@ import 'package:briio_application/screens/home/product_detail_page.dart';
 import '../../../model/get_category_id_by_product_model.dart';
 import 'filter_page.dart';
 import '../../../utils/pdf_generator.dart';
+import '../../../classes/wishlist.dart';
 
 class SubCategoryThreeScreen extends StatefulWidget {
   final int categoryId;
@@ -40,6 +41,7 @@ class _SubCategoryThreeScreenState extends State<SubCategoryThreeScreen> {
 
   bool isSelectMode = false;
   Set<int> selectedProductIds = {};
+  Set<int> wishlistedProducts = {};
   Filters filters = Filters();
   String sortOrder = 'default';
   
@@ -71,6 +73,16 @@ class _SubCategoryThreeScreenState extends State<SubCategoryThreeScreen> {
     currentSubSubCategoryId = widget.subSubCategoryId;
     currentSubSubCategoryName = widget.subSubCategoryName;
     _fetchTabsAndGrid();
+    _loadWishlistedProducts();
+  }
+
+  Future<void> _loadWishlistedProducts() async {
+    final wishlistData = await Wishlist.getWishlist();
+    setState(() {
+      wishlistedProducts = wishlistData.data
+          ?.map((item) => int.tryParse(item.productid.toString()) ?? 0)
+          .toSet() ?? {};
+    });
   }
 
   Future<void> _fetchTabsAndGrid() async {
@@ -311,7 +323,7 @@ class _SubCategoryThreeScreenState extends State<SubCategoryThreeScreen> {
                                                     }
                                                     return CachedNetworkImage(
                                                       imageUrl: url,
-                                                      fit: BoxFit.cover,
+                                                      fit: BoxFit.contain,
                                                       placeholder: (context, url) => Shimmer.fromColors(
                                                         baseColor: Colors.grey[300]!,
                                                         highlightColor: Colors.grey[100]!,
@@ -543,7 +555,7 @@ class _SubCategoryThreeScreenState extends State<SubCategoryThreeScreen> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
-                              childAspectRatio: 0.8,
+                              childAspectRatio: 1.0,
                             ),
                             itemCount: productList.length,
                             itemBuilder: (context, index) {
@@ -586,15 +598,62 @@ class _SubCategoryThreeScreenState extends State<SubCategoryThreeScreen> {
                                                 return Expanded(child: Container(color: Colors.grey[200]));
                                               }
                                               return Expanded(
-                                                child: CachedNetworkImage(
-                                                  imageUrl: url,
-                                                  fit: BoxFit.cover,
-                                                  placeholder: (context, url) => Shimmer.fromColors(
-                                                    baseColor: Colors.grey[300]!,
-                                                    highlightColor: Colors.grey[100]!,
-                                                    child: Container(color: Colors.white),
-                                                  ),
-                                                  errorWidget: (context, url, error) => Container(color: Colors.grey[200], child: const Icon(Icons.broken_image, color: Colors.grey)),
+                                                child: Stack(
+                                                  fit: StackFit.expand,
+                                                  children: [
+                                                    CachedNetworkImage(
+                                                      imageUrl: url,
+                                                      fit: BoxFit.contain,
+                                                      placeholder: (context, url) => Shimmer.fromColors(
+                                                        baseColor: Colors.grey[300]!,
+                                                        highlightColor: Colors.grey[100]!,
+                                                        child: Container(color: Colors.white),
+                                                      ),
+                                                      errorWidget: (context, url, error) => Container(color: Colors.grey[200], child: const Icon(Icons.broken_image, color: Colors.grey)),
+                                                    ),
+                                                    Positioned(
+                                                      top: 8,
+                                                      right: 8,
+                                                      child: GestureDetector(
+                                                        onTap: () async {
+                                                          int productId = product.id ?? 0;
+                                                          if (wishlistedProducts.contains(productId)) {
+                                                            setState(() {
+                                                              wishlistedProducts.remove(productId);
+                                                            });
+                                                            await Wishlist.getDeleteWishlist(
+                                                              product_id: productId.toString(),
+                                                              productVarientId: '6',
+                                                            );
+                                                          } else {
+                                                            setState(() {
+                                                              wishlistedProducts.add(productId);
+                                                            });
+                                                            await Wishlist.getAddWishlist(
+                                                              product_id: productId.toString(),
+                                                              productVarientId: '6',
+                                                            );
+                                                          }
+                                                        },
+                                                        child: Container(
+                                                          width: 26,
+                                                          height: 26,
+                                                          alignment: Alignment.center,
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.white.withOpacity(0.9),
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                          child: Icon(
+                                                            wishlistedProducts.contains(product.id)
+                                                                ? Icons.favorite
+                                                                : Icons.favorite_border_outlined,
+                                                            color: Colors.red,
+                                                            size: 18,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               );
                                             },
@@ -659,9 +718,10 @@ class _SubCategoryThreeScreenState extends State<SubCategoryThreeScreen> {
           ),
       floatingActionButton: isSelectMode && selectedProductIds.isNotEmpty
           ? FloatingActionButton(
+              heroTag: null,
               onPressed: () async {
                 final selectedItems = allProductsList.where((p) => selectedProductIds.contains(p.id)).toList();
-                await PdfGenerator.generateAndShowPdf(context, selectedItems, currentSubSubCategoryName);
+                PdfGenerator.showShareBottomSheet(context, selectedItems, currentSubSubCategoryName);
               },
               backgroundColor: Colors.red.shade400,
               child: const Column(

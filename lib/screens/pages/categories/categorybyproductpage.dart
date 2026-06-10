@@ -37,17 +37,28 @@ class _CategoryByProductState extends State<CategoryByProduct> {
   
   bool isSelectMode = false;
   Set<int> selectedProductIds = {};
+  Set<int> wishlistedProducts = {};
 
   @override
   void initState() {
     super.initState();
     filters = Filters();
     initializeProducts();
+    _loadWishlistedProducts();
     Future.delayed(const Duration(milliseconds: 2000), () {
       setState(() {
         isLoading = false;
         isLoader = true;
       });
+    });
+  }
+
+  Future<void> _loadWishlistedProducts() async {
+    final wishlistData = await Wishlist.getWishlist();
+    setState(() {
+      wishlistedProducts = wishlistData.data
+          ?.map((item) => int.tryParse(item.productid.toString()) ?? 0)
+          .toSet() ?? {};
     });
   }
 
@@ -330,7 +341,7 @@ class _CategoryByProductState extends State<CategoryByProduct> {
                               const SliverGridDelegateWithMaxCrossAxisExtent(
                                   maxCrossAxisExtent: 250,
                                   mainAxisExtent: 250,
-                                  childAspectRatio: 4 / 7,
+                                  childAspectRatio: 1.0,
                                   crossAxisSpacing: 8,
                                   mainAxisSpacing: 8),
                           itemCount: products.length,
@@ -374,7 +385,7 @@ class _CategoryByProductState extends State<CategoryByProduct> {
                                       borderRadius: BorderRadius.circular(7),
                                       child: CachedNetworkImage(
                                         imageUrl: products[index].image!.toString().startsWith('http') ? products[index].image!.toString() : '${imgPath}products/${products[index].image!.toString()}',
-                                        fit: BoxFit.cover,
+                                        fit: BoxFit.contain,
                                         placeholder: (context, url) =>
                                             const Center(child: CircularProgressIndicator()),
                                         errorWidget: (context, url, error) =>
@@ -454,7 +465,7 @@ class _CategoryByProductState extends State<CategoryByProduct> {
                               gridDelegate:
                                   const SliverGridDelegateWithMaxCrossAxisExtent(
                                       maxCrossAxisExtent: 250,
-                                      childAspectRatio: 4 / 7,
+                                      childAspectRatio: 1.0,
                                       crossAxisSpacing: 8,
                                       mainAxisSpacing: 8),
                               itemCount: products.length,
@@ -547,33 +558,38 @@ class _CategoryByProductState extends State<CategoryByProduct> {
                                                   top: 16,
                                                   right: 16,
                                                   child: GestureDetector(
-                                                    onTap: () {
-                                                      setState(() async {
-                                                        await Wishlist
-                                                            .getAddWishlist(
-                                                                product_id: snapshot
-                                                                    .data!
-                                                                    .data![
-                                                                        index]
-                                                                    .id
-                                                                    .toString(),
-                                                                productVarientId:
-                                                                    '6');
-                                                      });
+                                                    onTap: () async {
+                                                      int productId = snapshot.data!.data![index].id ?? 0;
+                                                      if (wishlistedProducts.contains(productId)) {
+                                                        setState(() {
+                                                          wishlistedProducts.remove(productId);
+                                                        });
+                                                        await Wishlist.getDeleteWishlist(
+                                                          product_id: productId.toString(),
+                                                          productVarientId: '6',
+                                                        );
+                                                      } else {
+                                                        setState(() {
+                                                          wishlistedProducts.add(productId);
+                                                        });
+                                                        await Wishlist.getAddWishlist(
+                                                          product_id: productId.toString(),
+                                                          productVarientId: '6',
+                                                        );
+                                                      }
                                                     },
                                                     child: Container(
                                                       width: 30,
                                                       height: 30,
-                                                      alignment:
-                                                          Alignment.center,
-                                                      decoration:
-                                                          const BoxDecoration(
+                                                      alignment: Alignment.center,
+                                                      decoration: const BoxDecoration(
                                                         color: Colors.white,
                                                         shape: BoxShape.circle,
                                                       ),
-                                                      child: const Icon(
-                                                        Icons
-                                                            .favorite_border_outlined,
+                                                      child: Icon(
+                                                        wishlistedProducts.contains(snapshot.data!.data![index].id)
+                                                            ? Icons.favorite
+                                                            : Icons.favorite_border_outlined,
                                                         color: Colors.red,
                                                       ),
                                                     ),
@@ -718,7 +734,8 @@ class _CategoryByProductState extends State<CategoryByProduct> {
       ),
       floatingActionButton: isSelectMode && selectedProductIds.isNotEmpty
           ? FloatingActionButton(
-              onPressed: () {
+              heroTag: null,
+              onPressed: () async {
                 // TODO: Implement PDF Generation
               },
               backgroundColor: Colors.red.shade400,

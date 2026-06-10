@@ -1,5 +1,11 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:briio_application/widgets/custom_loading.dart';
+import 'package:briio_application/utils/payment_service.dart';
+import 'package:briio_application/utils/globel_veriable.dart';
+import 'package:briio_application/utils/const.dart';
 
 class ChoosePlanPage extends StatefulWidget {
   const ChoosePlanPage({super.key});
@@ -10,11 +16,67 @@ class ChoosePlanPage extends StatefulWidget {
 
 class _ChoosePlanPageState extends State<ChoosePlanPage> {
   bool _isLoading = true;
+  late PaymentService _paymentService;
+  
+  String _selectedPlanName = '';
+  int _selectedDurationDays = 30;
+  double _selectedAmount = 1000.0;
+  double _selectedTotalWithGst = 1180.0;
 
   @override
   void initState() {
     super.initState();
+    _paymentService = PaymentService(
+      onSuccess: (response) async {
+        Get.dialog(
+          const Center(child: CircularProgressIndicator(color: Colors.white)),
+          barrierDismissible: false,
+        );
+        
+        try {
+          var renewResponse = await http.post(
+            Uri.parse('${apiUrl}membership-renew'),
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              "user_id": GlobalK.userId ?? 1,
+              "plan_name": _selectedPlanName,
+              "amount": _selectedTotalWithGst,
+              "duration_days": _selectedDurationDays,
+              "razorpay_payment_id": response.paymentId,
+              "razorpay_order_id": response.orderId ?? "",
+              "razorpay_signature": response.signature ?? ""
+            }),
+          );
+
+          Get.back(); // dismiss loading
+
+          if (renewResponse.statusCode == 200 || renewResponse.statusCode == 201) {
+            Get.snackbar('Success', 'Membership renewed successfully!', backgroundColor: Colors.green, colorText: Colors.white);
+            if (mounted) {
+              Navigator.pop(context); // Go back after success
+            }
+          } else {
+            Get.snackbar('Error', 'Failed to renew membership. Please try again.', backgroundColor: Colors.red, colorText: Colors.white);
+          }
+        } catch (e) {
+          Get.back(); // dismiss loading
+          Get.snackbar('Error', 'An error occurred: $e', backgroundColor: Colors.red, colorText: Colors.white);
+        }
+      },
+      onFailure: (errorMessage) {
+        // Handled by PaymentService toasts
+      },
+    );
     _fetchPlans();
+  }
+
+  @override
+  void dispose() {
+    _paymentService.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchPlans() async {
@@ -133,10 +195,47 @@ class _ChoosePlanPageState extends State<ChoosePlanPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () {
-                    // Navigate to payment page (not yet implemented in details but mockup shows Razorpay)
-                    // You can push to a dummy or actual checkout screen here
-                    Navigator.pop(context); // close bottom sheet
+                  onPressed: () async {
+                    Navigator.pop(context); // close bottom sheet first
+
+                    Get.dialog(
+                      const Center(child: CircularProgressIndicator(color: Colors.white)),
+                      barrierDismissible: false,
+                    );
+
+                    try {
+                      var orderResponse = await http.post(
+                        Uri.parse('${apiUrl}generate-razorpay-order'),
+                        headers: {
+                          'Accept': 'application/json',
+                          'Content-Type': 'application/json',
+                        },
+                        body: jsonEncode({
+                          "amount": _selectedTotalWithGst,
+                        }),
+                      );
+
+                      Get.back(); // dismiss loading
+
+                      if (orderResponse.statusCode == 200 || orderResponse.statusCode == 201) {
+                        var orderData = jsonDecode(orderResponse.body);
+                        String orderId = orderData['id'] ?? orderData['order_id'] ?? '';
+
+                        _paymentService.openCheckout(
+                          amount: _selectedTotalWithGst,
+                          contact: GlobalK.phone ?? '',
+                          email: GlobalK.userEmail ?? GlobalK.mail ?? '',
+                          orderName: 'BRIIO PLUS - $_selectedPlanName',
+                          description: 'Subscription Payment',
+                          orderId: orderId.isNotEmpty ? orderId : null,
+                        );
+                      } else {
+                        Get.snackbar('Error', 'Failed to generate payment order', backgroundColor: Colors.red, colorText: Colors.white);
+                      }
+                    } catch (e) {
+                      Get.back(); // dismiss loading
+                      Get.snackbar('Error', 'Something went wrong: $e', backgroundColor: Colors.red, colorText: Colors.white);
+                    }
                   },
                   child: const Text(
                     'Pay Now',
@@ -224,7 +323,13 @@ class _ChoosePlanPageState extends State<ChoosePlanPage> {
 
   Widget _buildPlanCard(String duration, String priceStr, int priceNum) {
     return GestureDetector(
-      onTap: () => _showPaymentBottomSheet(duration, priceStr, priceNum),
+      onTap: () {
+        _selectedPlanName = duration;
+        _selectedAmount = priceNum.toDouble();
+        _selectedDurationDays = duration.contains('1 Month') ? 30 : (duration.contains('6 Months') ? 180 : 365);
+        _selectedTotalWithGst = _selectedAmount + (_selectedAmount * 0.18).round();
+        _showPaymentBottomSheet(duration, priceStr, priceNum);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         decoration: BoxDecoration(

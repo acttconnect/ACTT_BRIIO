@@ -19,6 +19,7 @@ class GlobalK {
   static String? instruction;
   static String? productName;
   static String? totalProduct;
+  static String? userImage;
 
   static String? finalAmount;
   static String? totalAmount;
@@ -31,4 +32,34 @@ class GlobalK {
 
   static String count = '1';
   static String? equal;
+
+  static void clearAll() {
+    userId = null;
+    userFName = null;
+    userLName = null;
+    pass = null;
+    mail = null;
+    userEmail = null;
+    productId = null;
+    companyName = null;
+    address = null;
+    state = null;
+    city = null;
+    pincode = null;
+    gst = null;
+    hallMarks = null;
+    phone = null;
+    instruction = null;
+    productName = null;
+    totalProduct = null;
+    userImage = null;
+    finalAmount = null;
+    totalAmount = null;
+    categoryId = null;
+    mainCategoryId = null;
+    CategoryName = null;
+    searchKey = null;
+    count = '1';
+    equal = null;
+  }
 }

@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:briio_application/widgets/custom_loading.dart';
 import 'package:briio_application/utils/api_endpoints.dart';
 
 class UpdateProfileScreen extends StatefulWidget {
@@ -25,48 +28,99 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _pincodeController = TextEditingController();
 
+  File? _image;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      print("Error picking image: $e");
+    }
+  }
+
   // Update Profile function
   Future<void> updateProfile() async {
     if (_formKey.currentState!.validate()) {
-      String userId = GlobalK.userId.toString();
-      String name = _nameController.text;
-      String address = _addressController.text;
-      String email = _emailController.text;
-      String companyName = _companyController.text;
-      String gstNumber = _gstController.text;
-      String phone = _phoneController.text;
-      String? city = selectedCity;
-      String? state = selectedState;
-      String pincode = _pincodeController.text;
-
-      var request = http.Request(
-        'POST',
-        Uri.parse(
-          '${ApiEndpoints.updateProfile}?user_id=$userId&name=$name&address=$address&email=$email&company_name=$companyName&gst_number=$gstNumber&phone=$phone&city=$city&state=$state&pincode=$pincode',
-        ),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => const Center(child: CustomLoading(width: 40, height: 40)),
       );
 
-      final response = await http.Response.fromStream(await request.send());
+      try {
+        String userId = GlobalK.userId.toString();
+        String name = _nameController.text;
+        String address = _addressController.text;
+        String email = _emailController.text;
+        String companyName = _companyController.text;
+        String gstNumber = _gstController.text;
+        String phone = _phoneController.text;
+        String? city = selectedCity;
+        String? state = selectedState;
+        String pincode = _pincodeController.text;
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        var data = jsonDecode(response.body);
-        print(data);
-        
-        // Update GlobalK values with new data
-        GlobalK.userFName = name;
-        GlobalK.address = address;
-        GlobalK.userEmail = email;
-        GlobalK.companyName = companyName;
-        GlobalK.gst = gstNumber;
-        GlobalK.phone = phone;
-        GlobalK.city = city;
-        GlobalK.state = state;
-        GlobalK.pincode = pincode;
+        var request = http.MultipartRequest('POST', Uri.parse(ApiEndpoints.updateProfile));
+        request.fields.addAll({
+          'user_id': userId,
+          'name': name,
+          'address': address,
+          'email': email,
+          'company_name': companyName,
+          'gst_number': gstNumber,
+          'phone': phone,
+          'city': city ?? '',
+          'state': state ?? '',
+          'pincode': pincode,
+        });
 
-        Get.snackbar('Success', 'Profile updated successfully');
-        
-        // Navigate back to PersonProfile and replace the current screen
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const HomePage5()));
+        if (_image != null) {
+          request.files.add(await http.MultipartFile.fromPath('image', _image!.path));
+        }
+
+        http.StreamedResponse streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+
+        Navigator.pop(context); // Close loading dialog
+
+        print("Response status: ${response.statusCode}");
+        print("Response body: ${response.body}");
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          var data = jsonDecode(response.body);
+          
+          if (data['status'] == false || data['result'] == 'false') {
+             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? 'Failed to update profile')));
+             return;
+          }
+
+          // Update GlobalK values with new data
+          GlobalK.userFName = name;
+          GlobalK.address = address;
+          GlobalK.userEmail = email;
+          GlobalK.companyName = companyName;
+          GlobalK.gst = gstNumber;
+          GlobalK.phone = phone;
+          GlobalK.city = city;
+          GlobalK.state = state;
+          GlobalK.pincode = pincode;
+
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated successfully')));
+          
+          // Navigate back to PersonProfile and replace the current screen
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomePage5()));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed with status ${response.statusCode}. API Route not found.')));
+        }
+      } catch (e) {
+        Navigator.pop(context); // Close loading dialog
+        print("Exception in updateProfile: $e");
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('An error occurred. Please try again.')));
       }
     }
   }
@@ -861,12 +915,27 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cityField= DropdownButtonFormField<String>(
-      dropdownColor: Colors.white,
-      decoration: InputDecoration(
-        labelText: 'Select City *',
-        border: OutlineInputBorder(),
-      ),
+    final cityField = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<String>(
+        dropdownColor: Colors.white,
+        decoration: InputDecoration(
+          labelText: 'Select City *',
+          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFF5D5146), width: 1.5),
+          ),
+        ),
       initialValue: selectedCity,
       onChanged: (String? newCity) {
         setState(() {
@@ -879,14 +948,30 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         child: Text(city),
       ))
           .toList(),
+      ),
     );
 
-    final stateField = DropdownButtonFormField<String>(
-      dropdownColor: Colors.white,
-      decoration: InputDecoration(
-        labelText: 'Select State *',
-        border: OutlineInputBorder(),
-      ),
+    final stateField = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<String>(
+        dropdownColor: Colors.white,
+        decoration: InputDecoration(
+          labelText: 'Select State *',
+          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFF5D5146), width: 1.5),
+          ),
+        ),
       initialValue: selectedState,
       onChanged: (String? newState) {
         setState(() {
@@ -903,6 +988,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           child: Text(state),
         );
       }).toList(),
+      ),
     );
 
     return Scaffold(
@@ -910,12 +996,16 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        leading: IconButton(onPressed: (){Navigator.pop(context);}, icon: Icon(Icons.arrow_back_ios_new,size: 18,color: Colors.grey.shade700,)),
-        title:  Text('UPDATE PROFILE',
+        leading: IconButton(
+          onPressed: () { Navigator.pop(context); },
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF5D5146)),
+        ),
+        title: const Text(
+          'UPDATE PROFILE',
           style: TextStyle(
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
+            color: Color(0xFF5D5146),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
@@ -926,32 +1016,87 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           key: _formKey,
           child: ListView(
             children: [
+              const SizedBox(height: 10),
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          shape: BoxShape.circle,
+                        ),
+                        child: _image != null 
+                            ? ClipOval(
+                                child: Image.file(
+                                  _image!,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : (GlobalK.userImage != null && GlobalK.userImage!.isNotEmpty)
+                                ? ClipOval(
+                                    child: Image.network(
+                                      GlobalK.userImage!.startsWith('http') 
+                                          ? GlobalK.userImage! 
+                                          : 'https://briio.in/${GlobalK.userImage}',
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 60, color: Color(0xFF5D5146)),
+                                    ),
+                                  )
+                                : const Icon(Icons.person, size: 60, color: Color(0xFF5D5146)),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF5D5146),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
               _buildTextField(_nameController, 'Full Name', Icons.person),
               _buildTextField(_addressController, 'Address', Icons.location_on),
               _buildTextField(_emailController, 'Email', Icons.email),
-              _buildTextField(
-                  _companyController, 'Company Name', Icons.business),
+              _buildTextField(_companyController, 'Company Name', Icons.business),
               _buildTextField(_gstController, 'GST Number', Icons.store),
               _buildTextField(_phoneController, 'Phone', Icons.phone),
               stateField,
-              SizedBox(height: 10,),
               cityField,
               _buildTextField(_pincodeController, 'Pincode', Icons.pin),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: updateProfile,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade300,
+                  backgroundColor: const Color(0xFF5D5146),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  textStyle: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 child: const Text(
                   'Update Profile',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -970,15 +1115,20 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          contentPadding: EdgeInsets.all(0),
-          prefixIcon: Icon(icon),
+          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          prefixIcon: Icon(icon, color: const Color(0xFF5D5146)),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(width: 1),
+            borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade400, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(width: 2),
+            borderSide: const BorderSide(color: Color(0xFF5D5146), width: 1.5),
           ),
         ),
         validator: (value) {

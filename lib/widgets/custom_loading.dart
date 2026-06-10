@@ -6,8 +6,8 @@ class CustomLoading extends StatefulWidget {
 
   const CustomLoading({
     super.key,
-    this.width = 100,
-    this.height = 100,
+    this.width = 60,
+    this.height = 60,
   });
 
   @override
@@ -17,14 +17,18 @@ class CustomLoading extends StatefulWidget {
 class _CustomLoadingState extends State<CustomLoading>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1), // Fast spin
-    )..repeat();
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.8, end: 1.1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -36,10 +40,10 @@ class _CustomLoadingState extends State<CustomLoading>
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: RotationTransition(
-        turns: _controller,
+      child: ScaleTransition(
+        scale: _animation,
         child: Image.asset(
-          'assets/logo_o.png',
+          'assets/logo_transparent.png',
           width: widget.width,
           height: widget.height,
           fit: BoxFit.contain,

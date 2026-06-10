@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:briio_application/screens/pages/categories/main_category_screen.dart';
 import 'package:briio_application/utils/colors.dart';
+import 'package:briio_application/utils/payment_service.dart';
+import 'package:briio_application/utils/globel_veriable.dart';
+import 'package:briio_application/utils/const.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -16,6 +21,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   int _selectedPlanIndex = 1; // Default to Premium
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
+  late PaymentService _paymentService;
+  bool _isProcessing = false;
 
   final List<Map<String, dynamic>> _plans = [
     {
@@ -59,6 +66,53 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   @override
   void initState() {
     super.initState();
+    _paymentService = PaymentService(
+      onSuccess: (response) async {
+        setState(() {
+          _isProcessing = true;
+        });
+        
+        try {
+          var plan = _plans[_selectedPlanIndex];
+          var priceStr = plan['price'].toString().replaceAll(',', '');
+          double amountToPay = double.tryParse(priceStr) ?? 999.0;
+          int durationDays = (plan['title'] == 'Pro Yearly') ? 365 : 30;
+
+          var renewResponse = await http.post(
+            Uri.parse('${apiUrl}membership-renew'),
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              "user_id": GlobalK.userId ?? 1,
+              "plan_name": plan['title'],
+              "amount": amountToPay,
+              "duration_days": durationDays,
+              "razorpay_payment_id": response.paymentId,
+              "razorpay_order_id": response.orderId ?? "",
+              "razorpay_signature": response.signature ?? ""
+            }),
+          );
+
+          if (renewResponse.statusCode == 200 || renewResponse.statusCode == 201) {
+            Get.snackbar('Success', 'Membership renewed successfully!', backgroundColor: Colors.green, colorText: Colors.white);
+            Get.to(() => const MainCategoryScreen());
+          } else {
+            Get.snackbar('Error', 'Failed to renew membership. Please contact support.', backgroundColor: Colors.red, colorText: Colors.white);
+          }
+        } catch (e) {
+          Get.snackbar('Error', 'An error occurred: $e', backgroundColor: Colors.red, colorText: Colors.white);
+        } finally {
+          setState(() {
+            _isProcessing = false;
+          });
+        }
+      },
+      onFailure: (errorMessage) {
+        // Displayed internally by PaymentService via toast
+      },
+    );
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -71,6 +125,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   @override
   void dispose() {
+    _paymentService.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -380,8 +435,48 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           width: double.infinity,
           height: 60,
           child: ElevatedButton(
-            onPressed: () {
-              Get.to(() => const MainCategoryScreen());
+            onPressed: _isProcessing ? null : () async {
+              setState(() {
+                _isProcessing = true;
+              });
+
+              try {
+                var priceStr = selectedPlan['price'].toString().replaceAll(',', '');
+                double amountToPay = double.tryParse(priceStr) ?? 999.0;
+
+                var orderResponse = await http.post(
+                  Uri.parse('${apiUrl}generate-razorpay-order'),
+                  headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                  },
+                  body: jsonEncode({
+                    "amount": amountToPay,
+                  }),
+                );
+
+                if (orderResponse.statusCode == 200 || orderResponse.statusCode == 201) {
+                  var orderData = jsonDecode(orderResponse.body);
+                  String orderId = orderData['id'] ?? orderData['order_id'] ?? '';
+
+                  _paymentService.openCheckout(
+                    amount: amountToPay,
+                    contact: GlobalK.phone ?? '',
+                    email: GlobalK.userEmail ?? GlobalK.mail ?? '',
+                    orderName: 'BRIIO PLUS - ${selectedPlan['title']}',
+                    description: 'Subscription Payment',
+                    orderId: orderId.isNotEmpty ? orderId : null,
+                  );
+                } else {
+                  Get.snackbar('Error', 'Failed to generate payment order', backgroundColor: Colors.red, colorText: Colors.white);
+                }
+              } catch (e) {
+                Get.snackbar('Error', 'Something went wrong: $e', backgroundColor: Colors.red, colorText: Colors.white);
+              } finally {
+                setState(() {
+                  _isProcessing = false;
+                });
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.logo2,
@@ -394,8 +489,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                if (_isProcessing)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 12.0),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                  ),
                 Text(
-                  'Continue with ${selectedPlan['title']}',
+                  _isProcessing ? 'Processing...' : 'Continue with ${selectedPlan['title']}',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,

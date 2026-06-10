@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../utils/colors.dart';
-
+import '../pages/categories/main_category_screen.dart';
 import 'otp_verification.dart';
 
 class SignIn extends StatefulWidget {
@@ -103,11 +103,25 @@ class _SignInState extends State<SignIn> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    // Logo Section with centered alignment
+                    // Animated Logo Section with centered alignment
                     Center(
-                      child: Image.asset(
-                        'assets/blg.png',
-                        height: 40,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 1200),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: 0.8 + (value * 0.2), // Scales smoothly from 0.8 to 1.0
+                            child: Opacity(
+                              opacity: value, // Fades from 0.0 to 1.0
+                              child: Image.asset(
+                                'assets/blg.png',
+                                height: 40,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -232,6 +246,33 @@ class _SignInState extends State<SignIn> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainCategoryScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  "Skip for Now",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

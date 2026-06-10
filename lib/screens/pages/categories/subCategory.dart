@@ -121,7 +121,6 @@ class _SubCategoryState extends State<SubCategory> {
     imageUrl = imageUrl.replaceAll(' ', '%20');
     if (imageUrl == "${imgPath}subcategory/" || imageUrl.isEmpty) {
       return Container(
-        height: 170,
         width: double.infinity,
         color: Colors.grey[200],
         child: const Icon(Icons.broken_image, color: Colors.grey),
@@ -129,20 +128,17 @@ class _SubCategoryState extends State<SubCategory> {
     }
     return CachedNetworkImage(
       imageUrl: imageUrl,
-      height: 170,
       width: double.infinity,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       placeholder: (context, url) => Shimmer.fromColors(
         baseColor: Colors.grey[300]!,
         highlightColor: Colors.grey[100]!,
         child: Container(
-          height: 170,
           width: double.infinity,
           color: Colors.white,
         ),
       ),
       errorWidget: (context, url, error) => Container(
-        height: 170,
         width: double.infinity,
         color: Colors.grey[200],
         child: const Icon(Icons.broken_image, color: Colors.grey),
@@ -186,7 +182,7 @@ class _SubCategoryState extends State<SubCategory> {
                           crossAxisCount: 2,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
-                          childAspectRatio: 0.8,
+                          childAspectRatio: 1.0,
                         ),
                         itemCount: subCategory.length,
                         itemBuilder: (context, index) {
@@ -203,20 +199,33 @@ class _SubCategoryState extends State<SubCategory> {
                                 ),
                               );
                             },
-                            child: Card(
-                              color: Colors.white,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildOptimizedImage(
-                                    (subCategory[index].image != null && subCategory[index].image.toString().startsWith('http'))
-                                        ? subCategory[index].image.toString()
-                                        : "${imgPath}subcategory/${subCategory[index].image ?? ''}",
-                                  ),
-                                  Text(subCategory[index].subcategory.toString())
-                                ],
+                              child: Card(
+                                color: Colors.white,
+                                clipBehavior: Clip.antiAlias,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: _buildOptimizedImage(
+                                        (subCategory[index].image != null && subCategory[index].image.toString().startsWith('http'))
+                                            ? subCategory[index].image.toString()
+                                            : "${imgPath}subcategory/${subCategory[index].image ?? ''}",
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                                      child: Text(
+                                        subCategory[index].subcategory.toString(),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
                           );
                         },
                       ),

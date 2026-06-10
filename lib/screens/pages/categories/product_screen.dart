@@ -189,7 +189,7 @@ class _ProductScreenState extends State<ProductScreen> {
       imageUrl: imageUrl,
       height: 160,
       width: double.infinity,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       placeholder: (context, url) => Shimmer.fromColors(
         baseColor: Colors.grey[300]!,
         highlightColor: Colors.grey[100]!,
@@ -417,7 +417,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           crossAxisCount: 2,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          childAspectRatio: 0.8,
+                          childAspectRatio: 1.0,
                         ),
                         itemCount: products.length,
                         itemBuilder: (context, index) {
@@ -564,9 +564,10 @@ class _ProductScreenState extends State<ProductScreen> {
       ),
       floatingActionButton: isSelectMode && selectedProductIds.isNotEmpty
           ? FloatingActionButton(
+              heroTag: null,
               onPressed: () async {
                 final selectedItems = allProducts.where((p) => selectedProductIds.contains(p.id)).toList();
-                await PdfGenerator.generateAndShowPdf(context, selectedItems, widget.subcategoryName);
+                PdfGenerator.showShareBottomSheet(context, selectedItems, widget.subcategoryName);
               },
               backgroundColor: Colors.red.shade400,
               child: const Column(

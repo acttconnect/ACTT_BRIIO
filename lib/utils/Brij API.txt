@@ -1,4 +1,5 @@
 1.Slider-https://brij.acttconnect.com/api/Sliders
+https://briio.in/  ye he domain name  final
 2.Category-https://brij.acttconnect.com/api/Categorie5.
 Subcategorybyid-https://brij.acttconnect.com/api/ProductBySubCategorieId?id=1
 

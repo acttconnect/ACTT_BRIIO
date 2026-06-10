@@ -94,7 +94,7 @@ class _MainCategoryDetailsScreenState extends State<MainCategoryDetailsScreen> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
-                      childAspectRatio: 0.8,
+                      childAspectRatio: 1.0,
                     ),
                     itemCount: _categories.length,
                     itemBuilder: (context, index) {
@@ -124,7 +124,7 @@ class _MainCategoryDetailsScreenState extends State<MainCategoryDetailsScreen> {
                                       if (imgUrl.isEmpty || imgUrl == '${imgPath}category/') return Container(color: Colors.grey[200]);
                                       return CachedNetworkImage(
                                         imageUrl: imgUrl.replaceAll(' ', '%20'),
-                                        fit: BoxFit.cover,
+                                        fit: BoxFit.contain,
                                         placeholder: (context, url) => Shimmer.fromColors(
                                           baseColor: Colors.grey[300]!,
                                           highlightColor: Colors.grey[100]!,

@@ -1,3 +1,4 @@
+import 'package:briio_application/widgets/custom_loading.dart';
 import 'package:briio_application/utils/const.dart';
 import 'package:briio_application/utils/globel_veriable.dart';
 import 'package:flutter/material.dart';
@@ -68,7 +69,7 @@ class OrderTrackingScreen extends StatelessWidget {
                       
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
-                          return Center(child: CircularProgressIndicator());
+                          return Center(child: CustomLoading(width: 40, height: 40));
                         },
                         errorBuilder: (context, error, stackTrace) {
                           print('Image Error: $error');

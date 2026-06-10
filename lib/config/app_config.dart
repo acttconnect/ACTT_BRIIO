@@ -1,3 +1,4 @@
+import 'package:briio_application/widgets/custom_loading.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +24,7 @@ class AppConfig {
       height: height,
       fit: fit,
       placeholder: (context, url) => 
-          placeholder ?? const Center(child: CircularProgressIndicator()),
+          placeholder ?? const Center(child: CustomLoading(width: 40, height: 40)),
       errorWidget: (context, url, error) => 
           errorWidget ?? const Icon(Icons.error),
       memCacheWidth: width?.toInt(),

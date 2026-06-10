@@ -1,3 +1,4 @@
+import 'package:briio_application/widgets/custom_loading.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -76,20 +77,42 @@ class _CustomOrderHistoryState extends State<CustomOrderHistory> {
       ),
       body: FutureBuilder<CustomOrderModel>(
         future: getCustomOrder(),
-        builder: (context, snapshot) => snapshot.hasData
-            ? Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ListView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: snapshot.data!.data!.length,
-                  itemBuilder: (context, ind) =>
-                      buildCustomOrderCard(context, snapshot, ind),
-                ),
-              )
-            : const Center(
-                child: CircularProgressIndicator(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CustomLoading(width: 40, height: 40),
+            );
+          }
+          
+          if (snapshot.hasData && snapshot.data!.data != null && snapshot.data!.data!.isNotEmpty) {
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListView.builder(
+                itemCount: snapshot.data!.data!.length,
+                itemBuilder: (context, ind) =>
+                    buildCustomOrderCard(context, snapshot, ind),
               ),
+            );
+          } else {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.remove_shopping_cart, size: 80, color: Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No Custom Orders Found',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+        },
       ),
     );
   }

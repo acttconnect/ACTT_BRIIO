@@ -1,3 +1,4 @@
+import 'package:briio_application/widgets/custom_loading.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -19,8 +20,14 @@ class OrderHistoryPage extends StatefulWidget {
 class _OrderHistoryPageState extends State<OrderHistoryPage> {
   Future<ShowOrderModel> getOrderHistory() async {
     final response = await post(
-        Uri.parse('${apiUrl}getOrderData?user_id=${GlobalK.userId}'));
-    if (response.statusCode == 200) {
+      Uri.parse('${apiUrl}getOrderData'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({"user_id": GlobalK.userId}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
       var data = jsonDecode(response.body.toString());
       if (data['error'] == false) {
         return ShowOrderModel.fromJson(data);
@@ -84,7 +91,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                       ),
                     )
               : const Center(
-                  child: CircularProgressIndicator(),
+                  child: CustomLoading(width: 40, height: 40),
                 ),
         ),
       ),

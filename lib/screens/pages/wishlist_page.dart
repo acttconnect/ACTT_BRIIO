@@ -128,12 +128,9 @@ class _WishlistState extends State<WishlistPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF25D366),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        child: const Icon(FontAwesomeIcons.whatsapp, color: Colors.white, size: 32),
-      ),
+      // floatingActionButton: GestureDetector(
+      // ...
+      // ),
     );
   }
 
@@ -160,7 +157,7 @@ class _WishlistState extends State<WishlistPage> {
                 borderRadius: BorderRadius.circular(10),
                 child: CachedNetworkImage(
                   imageUrl: '${imgPath}products/${snapshot.data!.data![index].product!.image!.toString()}',
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   memCacheWidth: 320,
                   memCacheHeight: 320,
                   placeholder: (context, url) => const Center(

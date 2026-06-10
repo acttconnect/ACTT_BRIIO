@@ -46,6 +46,7 @@ class _MainCategoryScreenState extends State<MainCategoryScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Image.asset('assets/blg.png', height: 28, fit: BoxFit.contain),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -61,21 +62,30 @@ class _MainCategoryScreenState extends State<MainCategoryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _mainCategories.length,
-                          
-                          itemBuilder: (context, index) {
-                            final category = _mainCategories[index];
-                            return GestureDetector(
-                              onTap: () {
-                                GlobalK.mainCategoryId = category.id?.toString();
-                                Get.to(() => const HomePage5());
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 16),
-                                height: MediaQuery.of(context).size.height / 3.3, // take approx 1/3 of screen space
-                                decoration: BoxDecoration(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final double availableHeight = constraints.maxHeight;
+                            final int itemCount = _mainCategories.length;
+                            if (itemCount == 0) return const SizedBox();
+                            
+                            final double totalMarginsAndPadding = 32.0 + (16.0 * itemCount);
+                            final double cardHeight = (availableHeight - totalMarginsAndPadding) / itemCount;
+
+                            return ListView.builder(
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(16),
+                              itemCount: itemCount,
+                              itemBuilder: (context, index) {
+                                final category = _mainCategories[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    GlobalK.mainCategoryId = category.id?.toString();
+                                    Get.to(() => const HomePage5());
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    height: cardHeight > 0 ? cardHeight : 100, // Perfectly fits the screen space
+                                    decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -167,11 +177,13 @@ class _MainCategoryScreenState extends State<MainCategoryScreen> {
                               ),
                             );
                           },
-                        ),
-                      ),
-                    ],
+                        );
+                      },
+                    ),
                   ),
-                ),
+                ],
+              ),
+            ),
     );
   }
 }

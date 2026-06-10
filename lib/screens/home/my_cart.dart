@@ -1,4 +1,5 @@
-// import 'dart:convert';
+// import 'package:briio_application/widgets/custom_loading.dart';
+import 'dart:convert';
 
 // import 'package:flutter/material.dart';
 // import 'package:http/http.dart' as http;
@@ -62,7 +63,7 @@
 //   @override
 //   Widget build(BuildContext context) {
 //     if (_isLoading) {
-//       return const Center(child: CircularProgressIndicator());
+//       return const Center(child: CustomLoading(width: 40, height: 40));
 //     } else if (_errorMessage != null) {
 //       return Center(child: Text(_errorMessage!));
 //     } else if (_cartItems != null && _cartItems!.isNotEmpty) {

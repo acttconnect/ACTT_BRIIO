@@ -143,19 +143,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
+      await prefs.setBool('isLoggedIn', false); // Ensure it's false
       
-      // Clear GlobalK values
-      GlobalK.userId = null;
-      GlobalK.userFName = null;
-      GlobalK.userEmail = null;
-      GlobalK.phone = null;
-      GlobalK.companyName = null;
-      GlobalK.gst = null;
-      GlobalK.hallMarks = null;
-      GlobalK.address = null;
-      GlobalK.city = null;
-      GlobalK.state = null;
-      GlobalK.pincode = null;
+      // Clear GlobalK values using the new method
+      GlobalK.clearAll();
       
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const SignIn()),

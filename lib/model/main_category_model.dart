@@ -27,6 +27,7 @@ class MainCategoryModel {
 class MainCategory {
   int? id;
   String? name;
+  String? subHeading;
   String? image;
   String? bgimage;
   int? status;
@@ -37,6 +38,7 @@ class MainCategory {
   MainCategory(
       {this.id,
       this.name,
+      this.subHeading,
       this.image,
       this.bgimage,
       this.status,
@@ -47,6 +49,7 @@ class MainCategory {
   MainCategory.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     name = json['name'];
+    subHeading = json['sub_heading'];
     image = json['image'];
     bgimage = json['bgimage'];
     status = json['status'];
@@ -59,6 +62,7 @@ class MainCategory {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['name'] = name;
+    data['sub_heading'] = subHeading;
     data['image'] = image;
     data['bgimage'] = bgimage;
     data['status'] = status;

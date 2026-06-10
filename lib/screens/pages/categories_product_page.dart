@@ -135,7 +135,7 @@ class _CategoriesProductPageState extends State<CategoriesProductPage> {
               ? GridView.builder(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: 250,
-                      childAspectRatio: 4 / 7,
+                      childAspectRatio: 1.0,
                       crossAxisSpacing: 15,
                       mainAxisSpacing: 10),
                   itemCount: snapshot.data!.product!.length,
@@ -173,7 +173,7 @@ class _CategoriesProductPageState extends State<CategoriesProductPage> {
                                           image: NetworkImage(
                                             '${imgPath}products/${snapshot.data!.product![index].image!.toString()}',
                                           ),
-                                          fit: BoxFit.cover,
+                                          fit: BoxFit.contain,
                                         ),
                                       ),
                                     ),

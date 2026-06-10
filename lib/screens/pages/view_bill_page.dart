@@ -1,13 +1,16 @@
+import 'package:briio_application/widgets/custom_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gal/gal.dart';
 import 'dart:io';
+import '../../utils/globel_veriable.dart';
 import 'choose_plan_page.dart';
 
 class ViewBillPage extends StatefulWidget {
-  const ViewBillPage({super.key});
+  final Map<String, dynamic>? membershipData;
+  const ViewBillPage({super.key, this.membershipData});
 
   @override
   State<ViewBillPage> createState() => _ViewBillPageState();
@@ -32,7 +35,63 @@ class _ViewBillPageState extends State<ViewBillPage> {
     );
   }
 
+  String _numberToWords(int number) {
+    if (number == 0) return 'Zero';
+    
+    final List<String> units = [
+      '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+      'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+    ];
+    
+    final List<String> tens = [
+      '', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'
+    ];
+    
+    String words = '';
+    
+    if ((number / 10000000).floor() > 0) {
+      words += '${_numberToWords((number / 10000000).floor())} Crore ';
+      number %= 10000000;
+    }
+    
+    if ((number / 100000).floor() > 0) {
+      words += '${_numberToWords((number / 100000).floor())} Lakh ';
+      number %= 100000;
+    }
+    
+    if ((number / 1000).floor() > 0) {
+      words += '${_numberToWords((number / 1000).floor())} Thousand ';
+      number %= 1000;
+    }
+    
+    if ((number / 100).floor() > 0) {
+      words += '${_numberToWords((number / 100).floor())} Hundred ';
+      number %= 100;
+    }
+    
+    if (number > 0) {
+      if (number < 20) {
+        words += '${units[number]} ';
+      } else {
+        words += '${tens[(number / 10).floor()]} ';
+        if ((number % 10) > 0) {
+          words += '${units[number % 10]} ';
+        }
+      }
+    }
+    
+    return words.trim();
+  }
+
   Widget _buildInvoice({bool isScreenshot = false}) {
+    String planName = widget.membershipData?['plan_name']?.toString() ?? '1 Month';
+    double totalAmountDouble = double.tryParse(widget.membershipData?['amount']?.toString() ?? '1180') ?? 1180.0;
+    int totalAmount = totalAmountDouble.toInt();
+    int basePrice = (totalAmount / 1.18).round();
+    int gst = totalAmount - basePrice;
+    
+    String amountInWords = '${_numberToWords(totalAmount)} rupees only';
+
     // We constrain the width so the screenshot matches typical mobile width and doesn't get messed up.
     return Container(
       width: isScreenshot ? 400 : double.infinity,
@@ -61,9 +120,12 @@ class _ViewBillPageState extends State<ViewBillPage> {
             ),
           ),
           const SizedBox(height: 30),
-          const Text(
-            'no\n9696969696\nno@gmail.com',
-            style: TextStyle(
+          Text(
+            '${GlobalK.userFName ?? ''} ${GlobalK.userLName ?? ''}'.trim().isEmpty 
+                ? 'User' 
+                : '${GlobalK.userFName ?? ''} ${GlobalK.userLName ?? ''}'.trim() + 
+                  '\n${GlobalK.phone ?? 'N/A'}\n${GlobalK.userEmail ?? 'N/A'}',
+            style: const TextStyle(
               fontSize: 12,
               color: Colors.black87,
               height: 1.5,
@@ -116,25 +178,25 @@ class _ViewBillPageState extends State<ViewBillPage> {
                     TableRow(
                       children: [
                         Container(
-                          height: 120, // Tall row to match standard bill design
+                          height: 70, // Tall row to match standard bill design
                           padding: const EdgeInsets.only(top: 12, left: 8, right: 8),
                           alignment: Alignment.topLeft,
-                          child: const Text('1 Month', style: TextStyle(color: Colors.black87, fontSize: 12)),
+                          child: Text(planName, style: const TextStyle(color: Colors.black87, fontSize: 12)),
                         ),
                         Container(
-                          height: 120,
+                          height: 70,
                           alignment: Alignment.center,
-                          child: const Text('1000', style: TextStyle(color: Colors.black87, fontSize: 12)),
+                          child: Text(basePrice.toString(), style: const TextStyle(color: Colors.black87, fontSize: 12)),
                         ),
                         Container(
-                          height: 120,
+                          height: 70,
                           alignment: Alignment.center,
                           child: const Text('1', style: TextStyle(color: Colors.black87, fontSize: 12)),
                         ),
                         Container(
-                          height: 120,
+                          height: 70,
                           alignment: Alignment.center,
-                          child: const Text('1000', style: TextStyle(color: Colors.black87, fontSize: 12)),
+                          child: Text(basePrice.toString(), style: const TextStyle(color: Colors.black87, fontSize: 12)),
                         ),
                       ],
                     ),
@@ -165,20 +227,20 @@ class _ViewBillPageState extends State<ViewBillPage> {
                             TableRow(
                               children: [
                                 _buildTableCell('Total'),
-                                _buildTableCell('1000', align: TextAlign.right),
+                                _buildTableCell(basePrice.toString(), align: TextAlign.right),
                               ],
                             ),
                             TableRow(
                               decoration: BoxDecoration(color: Colors.black.withOpacity(0.03)),
                               children: [
                                 _buildTableCell('GST 18%'),
-                                _buildTableCell('180', align: TextAlign.right),
+                                _buildTableCell(gst.toString(), align: TextAlign.right),
                               ],
                             ),
                             TableRow(
                               children: [
                                 _buildTableCell('Grand\nTotal', isBold: true),
-                                _buildTableCell('1180', isBold: true, align: TextAlign.right),
+                                _buildTableCell(totalAmount.toString(), isBold: true, align: TextAlign.right),
                               ],
                             ),
                           ],
@@ -192,9 +254,9 @@ class _ViewBillPageState extends State<ViewBillPage> {
           ),
           
           const SizedBox(height: 24),
-          const Text(
-            'Amount in words : One thousand one\nhundred eighty rupees only',
-            style: TextStyle(
+          Text(
+            'Amount in words : $amountInWords',
+            style: const TextStyle(
               fontSize: 10,
               color: Colors.black87,
             ),
@@ -209,7 +271,7 @@ class _ViewBillPageState extends State<ViewBillPage> {
                   const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CustomLoading(width: 40, height: 40),
                   )
                 else ...[
                   IconButton(
@@ -270,18 +332,14 @@ class _ViewBillPageState extends State<ViewBillPage> {
     setState(() => _isCapturing = true);
     try {
       final image = await _screenshotController.captureFromWidget(
-        InheritedTheme.captureAll(
-          context,
-          Material(
-            color: Colors.white,
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: _buildInvoice(isScreenshot: true),
-            ),
+        Material(
+          color: Colors.white,
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: _buildInvoice(isScreenshot: true),
           ),
         ),
         delay: const Duration(milliseconds: 100),
-        context: context,
       );
 
       final directory = await getTemporaryDirectory();
@@ -300,18 +358,14 @@ class _ViewBillPageState extends State<ViewBillPage> {
     setState(() => _isCapturing = true);
     try {
       final image = await _screenshotController.captureFromWidget(
-        InheritedTheme.captureAll(
-          context,
-          Material(
-            color: Colors.white,
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: _buildInvoice(isScreenshot: true),
-            ),
+        Material(
+          color: Colors.white,
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: _buildInvoice(isScreenshot: true),
           ),
         ),
         delay: const Duration(milliseconds: 100),
-        context: context,
       );
 
       final directory = await getTemporaryDirectory();

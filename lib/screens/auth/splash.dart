@@ -13,22 +13,25 @@ class Splash extends StatefulWidget {
   State<Splash> createState() => _SplashState();
 }
 
-class _SplashState extends State<Splash> {
-  bool isSelected = false;
+class _SplashState extends State<Splash> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   Future<void> checkLoginStatus() async {
-    await Future.delayed(const Duration(milliseconds: 2000));
-    
+    // Wait for the animation to complete + a small delay
+    await Future.delayed(const Duration(milliseconds: 2500));
+
     if (!mounted) return;
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
       final userDataString = prefs.getString('userData');
-      
+
       if (isLoggedIn && userDataString != null) {
         final userData = json.decode(userDataString);
-        
+
         // Set user data to GlobalK
         GlobalK.userId = userData['id'];
         GlobalK.userFName = userData['name'];
@@ -52,7 +55,7 @@ class _SplashState extends State<Splash> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const SignIn()),
+            MaterialPageRoute(builder: (context) => SignIn()),
           );
         }
       }
@@ -61,7 +64,7 @@ class _SplashState extends State<Splash> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const SignIn()),
+          MaterialPageRoute(builder: (context) => SignIn()),
         );
       }
     }
@@ -70,26 +73,53 @@ class _SplashState extends State<Splash> {
   @override
   void initState() {
     super.initState();
-    checkLoginStatus();
-    Future.delayed(
-      const Duration(milliseconds: 200),
-      () => setState(() => isSelected = true),
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
     );
+
+    // Smooth fade in
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6,
+            curve: Curves.easeIn), // Fade in completely by 60% of animation
+      ),
+    );
+
+    // Smooth and bouncy scale up
+    _scaleAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutBack, // Premium bounce effect
+      ),
+    );
+
+    _controller.forward();
+    checkLoginStatus();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: GestureDetector(
-        onTap: () => setState(() => isSelected = !isSelected),
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(seconds: 2),
-            height: isSelected ? 110 : 50,
-            width: isSelected ? 280 : 50,
-            curve: Curves.easeOutCirc,
-            child: Image.asset('assets/blg.png'),
+      body: Center(
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Image.asset(
+              'assets/brlgo.jpeg',
+              width: MediaQuery.of(context).size.width * 0.65,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
       ),

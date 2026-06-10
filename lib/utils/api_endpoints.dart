@@ -34,5 +34,6 @@ class ApiEndpoints {
   
   static const String notifications = '${baseUrl}get_notifications';
   
-  static const String updateProfile = '${baseUrl}updateProfile';
+  static const String updateProfile = '${baseUrl}update-profile';
+  static const String userDetails = '${baseUrl}userdetails';
 }

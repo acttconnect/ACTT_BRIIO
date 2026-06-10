@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../utils/cart_order.dart';
 
@@ -34,8 +35,7 @@ class RoundedContainer extends StatelessWidget {
   final c = Get.put(MyController());
   @override
   Widget build(BuildContext context) {
-    return Ink(
-      padding: padding,
+    return Container(
       height: height,
       width: width,
       decoration: BoxDecoration(
@@ -44,27 +44,50 @@ class RoundedContainer extends StatelessWidget {
           color: borderColor ?? Colors.transparent,
         ),
         borderRadius: BorderRadius.circular(12),
-        image: image == null
-            ? networkImg == null
-                ? DecorationImage(
-                    image: const AssetImage(''),
-                    fit: BoxFit.cover,
-                    opacity: opacity ?? 0.0,
-                  )
-                : DecorationImage(
-                    image: NetworkImage(networkImg!),
-                    fit: BoxFit.cover,
-                    opacity: opacity ?? 1.0,
-                  )
-            : DecorationImage(
-                image: AssetImage(image!),
-                fit: BoxFit.cover,
-                opacity: opacity ?? 0.6,
-              ),
       ),
-      child: InkWell(
-        onTap: onTap,
-        child: child,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            if (image != null)
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity ?? 0.6,
+                  child: Image.asset(
+                    image!,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            else if (networkImg != null)
+              Positioned.fill(
+                child: Opacity(
+                  opacity: opacity ?? 1.0,
+                  child: CachedNetworkImage(
+                    imageUrl: networkImg!,
+                    fit: BoxFit.cover,
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Icon(Icons.image_not_supported, color: Colors.grey, size: 30),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: padding ?? EdgeInsets.zero,
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:briio_application/utils/api_endpoints.dart';
 import 'package:briio_application/screens/pages/update_profile.dart';
 import 'package:briio_application/widgets/custom_loading.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +19,7 @@ import 'package:briio_application/screens/pages/customer_care.dart';
 import 'package:briio_application/screens/pages/bank_details.dart';
 import 'package:briio_application/screens/pages/festivals_page.dart';
 import 'package:briio_application/screens/pages/membership_details_page.dart';
+import 'package:briio_application/screens/pages/customer_list.dart';
 
 class PersonProfile extends StatefulWidget {
   const PersonProfile({super.key});
@@ -34,9 +38,38 @@ class _PersonProfileState extends State<PersonProfile> {
   }
 
   Future<void> _fetchProfile() async {
-    // Simulate fetching user profile data from an API.
-    // Replace this with your actual GET API call later.
-    await Future.delayed(const Duration(seconds: 1));
+    if (GlobalK.userId != null) {
+      try {
+        var request = http.MultipartRequest('POST', Uri.parse(ApiEndpoints.userDetails));
+        request.fields.addAll({
+          'user_id': GlobalK.userId.toString()
+        });
+        
+        http.StreamedResponse response = await request.send();
+        
+        if (response.statusCode == 200) {
+          String responseBody = await response.stream.bytesToString();
+          var data = jsonDecode(responseBody);
+          
+          if (data['error'] == false && data['data'] != null) {
+            var userData = data['data'];
+            GlobalK.userFName = userData['name']?.toString() ?? GlobalK.userFName;
+            GlobalK.address = userData['address']?.toString() ?? GlobalK.address;
+            GlobalK.userEmail = userData['email']?.toString() ?? GlobalK.userEmail;
+            GlobalK.companyName = userData['company_name']?.toString() ?? GlobalK.companyName;
+            GlobalK.gst = userData['gst_number']?.toString() ?? GlobalK.gst;
+            GlobalK.phone = userData['phone']?.toString() ?? GlobalK.phone;
+            GlobalK.city = userData['city']?.toString() ?? GlobalK.city;
+            GlobalK.state = userData['state']?.toString() ?? GlobalK.state;
+            GlobalK.pincode = userData['pincode']?.toString() ?? GlobalK.pincode;
+            GlobalK.userImage = userData['image']?.toString() ?? GlobalK.userImage;
+          }
+        }
+      } catch (e) {
+        debugPrint("Error fetching profile: $e");
+      }
+    }
+    
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -64,8 +97,59 @@ class _PersonProfileState extends State<PersonProfile> {
               fontSize: 20),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: (GlobalK.userId == null)
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/blg.png',
+                    width: MediaQuery.of(context).size.width * 0.6,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 40),
+                  const Text(
+                    "You're not logged in",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Log in to view your profile",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      Get.to(() => SignIn());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4A4138),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    ),
+                    child: const Text(
+                      'Login',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40), // some bottom padding to center it well
+                ],
+              ),
+            )
+          : SingleChildScrollView(
+              child: Column(
           children: [
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -102,7 +186,7 @@ class _PersonProfileState extends State<PersonProfile> {
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           width: 90,
@@ -110,15 +194,25 @@ class _PersonProfileState extends State<PersonProfile> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.grey.shade700,
-                              width: 6,
+                              color: const Color(0xFF4A4138),
+                              width: 5,
                             ),
-                            color: Colors.grey.shade700,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            size: 70,
                             color: Colors.white,
+                          ),
+                          child: ClipOval(
+                            child: (GlobalK.userImage != null && GlobalK.userImage!.isNotEmpty)
+                                ? Image.network(
+                                    GlobalK.userImage!.startsWith('http') 
+                                        ? GlobalK.userImage! 
+                                        : 'https://briio.in/${GlobalK.userImage}',
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 75, color: Color(0xFF4A4138)),
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    size: 75,
+                                    color: Color(0xFF4A4138),
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -131,7 +225,7 @@ class _PersonProfileState extends State<PersonProfile> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '${GlobalK.companyName}', // Assuming companyName corresponds to "New" or similar above Name
+                                    GlobalK.companyName ?? '', // Assuming companyName corresponds to "New" or similar above Name
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -159,7 +253,7 @@ class _PersonProfileState extends State<PersonProfile> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${GlobalK.userFName}', // User name (e.g. Nosgsh)
+                                GlobalK.userFName ?? '', // User name (e.g. Nosgsh)
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -168,7 +262,7 @@ class _PersonProfileState extends State<PersonProfile> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '${GlobalK.address},${GlobalK.city},${GlobalK.state}',
+                                '${GlobalK.address ?? ''},${GlobalK.city ?? ''},${GlobalK.state ?? ''}',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: Colors.black87,
@@ -178,7 +272,7 @@ class _PersonProfileState extends State<PersonProfile> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '+91${GlobalK.phone}',
+                                '+91${GlobalK.phone ?? ''}',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: Colors.black87,
@@ -220,7 +314,7 @@ class _PersonProfileState extends State<PersonProfile> {
               icon: Icons.group,
               title: 'Customer List',
               onTap: () {
-                // TODO: Navigate to Customer List
+                Get.to(() => CustomerListScreen());
               },
             ),
             _buildMenuItem(
@@ -281,12 +375,12 @@ class _PersonProfileState extends State<PersonProfile> {
                   middleText: 'Are you sure you want to logout?',
                   confirm: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: Colors.grey[400],
                     ),
                     onPressed: () => AuthLogin.logout(),
                     child: const Text(
                       'Logout',
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(color: Colors.black87),
                     ),
                   ),
                   cancel: ElevatedButton(
@@ -296,7 +390,7 @@ class _PersonProfileState extends State<PersonProfile> {
                     onPressed: () => Get.back(),
                     child: const Text(
                       'Cancel',
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(color: Colors.black87),
                     ),
                   ),
                 );
@@ -306,19 +400,9 @@ class _PersonProfileState extends State<PersonProfile> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Open WhatsApp for support
-        },
-        backgroundColor: Colors.green,
-        shape: const CircleBorder(),
-        child: Image.asset(
-          'assets/whatsapp.png', // WhatsApp icon
-          height: 35,
-          width: 35,
-          color: Colors.white,
-        ),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      // ...
+      // ),
     );
   }
 

@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:io';
 import 'dart:convert';
 import 'package:briio_application/screens/auth/sign_in.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../utils/const.dart';
 import '../../widgets/auth_button.dart';
@@ -21,6 +23,17 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
+  File? _companyLogo;
+
+  Future<void> _pickLogo() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _companyLogo = File(pickedFile.path);
+      });
+    }
+  }
   List<Map<String, dynamic>> statesData = [
     {
       "state": "Andhra Pradesh",
@@ -778,10 +791,30 @@ class _SignUpState extends State<SignUp> {
     return List<String>.from(stateData["districts"]);
   }
 
-  final hintStyle = TextStyle(
-    color: Colors.grey.shade900,
-    fontSize: 14,
-  );
+  InputDecoration _buildDecoration(String hint, IconData? icon) {
+    return InputDecoration(
+      prefixIcon: icon != null ? Icon(icon, color: Colors.grey.shade700) : null,
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      hintText: hint,
+      hintStyle: TextStyle(
+        color: Colors.grey.shade700,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade400),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade400),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.black54),
+      ),
+    );
+  }
 
   final _formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
@@ -797,222 +830,142 @@ class _SignUpState extends State<SignUp> {
 
   @override
   Widget build(BuildContext context) {
+    final companyField = TextFormField(
+      autofocus: false,
+      controller: companyNameEditingController,
+      inputFormatters: [FirstLetterUpperCaseFormatter()],
+      validator: (value) => value!.isEmpty ? "Company Name cannot be Empty" : null,
+      textInputAction: TextInputAction.next,
+      decoration: _buildDecoration("Company Name *", Icons.account_circle),
+    );
     final fullNameField = TextFormField(
       cursorColor: Colors.black,
-        autofocus: false,
-        controller: nameController,
-        keyboardType: TextInputType.name,
-        inputFormatters: [
-          FirstLetterUpperCaseFormatter(),
-        ],
-        validator: (value) {
-          RegExp regex = RegExp(r'^.{3,}$');
-          if (value!.isEmpty) {
-            return ("Name cannot be Empty");
-          }
-          if (!regex.hasMatch(value)) {
-            return ("Enter Valid name (Min. 3 Character)");
-          }
-          return null;
-        },
-        textInputAction: TextInputAction.next,
-        decoration: InputDecoration(
-          focusColor: Colors.black,
-          prefixIcon: const Icon(Icons.account_circle),
-          contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          hintText: "User Name *",
-          hintStyle: hintStyle,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ));
-    final addressField = TextFormField(
-        autofocus: false,
-        controller: addressController,
-        validator: (value) {
-          if (value!.isEmpty) {
-            return ("Address cannot be Empty");
-          }
-          return null;
-        },
-        textInputAction: TextInputAction.next,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.location_on),
-          contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          hintText: "Shop Address *",
-          hintStyle: hintStyle,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ));
-
-    final cityField= DropdownButtonFormField<String>(
+      autofocus: false,
+      controller: nameController,
+      keyboardType: TextInputType.name,
+      inputFormatters: [FirstLetterUpperCaseFormatter()],
+      validator: (value) {
+        if (value!.isEmpty) return "Name cannot be Empty";
+        if (!RegExp(r'^.{3,}$').hasMatch(value)) return "Enter Valid name (Min. 3 Character)";
+        return null;
+      },
+      textInputAction: TextInputAction.next,
+      decoration: _buildDecoration("User Name *", Icons.account_circle),
+    );
+    final emailField = TextFormField(
+      autofocus: false,
+      controller: emailController,
+      keyboardType: TextInputType.emailAddress,
+      validator: (value) {
+        if (value!.isEmpty) return "Please Enter Your Email";
+        if (!RegExp("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+.[a-z]").hasMatch(value)) return "Please Enter a valid email";
+        return null;
+      },
+      textInputAction: TextInputAction.next,
+      decoration: _buildDecoration("Email Address *", Icons.mail),
+    );
+    final numberField = TextFormField(
+      autofocus: false,
+      controller: phoneController,
+      keyboardType: TextInputType.number,
+      validator: (value) {
+        if (value!.isEmpty) return "number cannot be Empty";
+        if (!RegExp(r'^.{9,}$').hasMatch(value)) return "Enter the valid contact number";
+        return null;
+      },
+      textInputAction: TextInputAction.next,
+      decoration: _buildDecoration("Mobile No *", Icons.call),
+    );
+    final stateField = DropdownButtonFormField<String>(
       dropdownColor: Colors.white,
-      decoration: InputDecoration(
-        labelText: 'Select City *',
-        labelStyle: hintStyle,
-        border: OutlineInputBorder(),
-      ),
+      decoration: _buildDecoration("Select State *", null),
+      icon: Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
+      initialValue: selectedState,
+      onChanged: (String? newState) {
+        setState(() {
+          selectedState = newState;
+          selectedCity = null;
+          cities = getCitiesForState(newState);
+        });
+      },
+      items: statesData.map((stateData) => stateData["state"]).map((state) {
+        return DropdownMenuItem<String>(
+          value: state as String,
+          child: Text(state as String),
+        );
+      }).toList(),
+    );
+    final cityField = DropdownButtonFormField<String>(
+      dropdownColor: Colors.white,
+      decoration: _buildDecoration("Select City *", null),
+      icon: Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
       initialValue: selectedCity,
       onChanged: (String? newCity) {
         setState(() {
           selectedCity = newCity;
         });
       },
-      items: cities
-          .map((city) => DropdownMenuItem<String>(
+      items: cities.map((city) => DropdownMenuItem<String>(
         value: city,
         child: Text(city),
-      ))
-          .toList(),
+      )).toList(),
     );
-
-    final stateField = DropdownButtonFormField<String>(
-      dropdownColor: Colors.white,
-      decoration: InputDecoration(
-        labelText: 'Select State *',
-        labelStyle: hintStyle,
-        border: OutlineInputBorder(),
-      ),
-      initialValue: selectedState,
-      onChanged: (String? newState) {
-        setState(() {
-          selectedState = newState;
-          selectedCity = null; // Reset city selection
-          cities = getCitiesForState(newState); // Update city list based on selected state
-        });
-      },
-      items: statesData
-          .map((stateData) => stateData["state"])
-          .map((state) {
-        return DropdownMenuItem<String>(
-          value: state,
-          child: Text(state),
-        );
-      }).toList(),
-    );
-    final companyField = TextFormField(
-        autofocus: false,
-        controller: companyNameEditingController,
-        inputFormatters: [
-          FirstLetterUpperCaseFormatter(),
-        ],
-        validator: (value) {
-          if (value!.isEmpty) {
-            return ("Company Name cannot be Empty");
-          }
-          return null;
-        },
-        textInputAction: TextInputAction.next,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.account_circle),
-          contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          hintText: "Company Name *",
-          hintStyle: hintStyle,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ));
-    final numberField = TextFormField(
-        autofocus: false,
-        controller: phoneController,
-        keyboardType: TextInputType.number,
-        validator: (value) {
-          RegExp regex = RegExp(r'^.{9,}$');
-
-          if (value!.isEmpty) {
-            return ("number cannot be Empty");
-          }
-          if (!regex.hasMatch(value)) {
-            return 'Enter the valid contact number';
-          }
-          return null;
-        },
-        textInputAction: TextInputAction.next,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.call),
-          contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          hintText: "Mobile No *",
-          hintStyle: hintStyle,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ));
-    final emailField = TextFormField(
-        autofocus: false,
-        controller: emailController,
-        keyboardType: TextInputType.emailAddress,
-        validator: (value) {
-          if (value!.isEmpty) {
-            return ("Please Enter Your Email");
-          }
-          // reg expression for email validation
-          if (!RegExp("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+.[a-z]")
-              .hasMatch(value)) {
-            return ("Please Enter a valid email");
-          }
-          return null;
-        },
-        textInputAction: TextInputAction.next,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.mail),
-          contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          hintText: "Email Address *",
-          hintStyle: hintStyle,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ));
-    final pinCodeField = TextFormField(
-        autofocus: false,
-        controller: pinCodeController,
-        keyboardType: TextInputType.number,
-        validator: (value) {
-          RegExp regex = RegExp(r'^.{5,}$');
-
-          if (value!.isEmpty) {
-            return ("Pincode cannot be Empty");
-          }
-          if (!regex.hasMatch(value)) {
-            return 'Enter the valid Pin Code ';
-          }
-          return null;
-        },
-        textInputAction: TextInputAction.next,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.scatter_plot),
-          contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          hintText: "Pin-Code *",
-          hintStyle: hintStyle,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ));
-
-    final gstnumberField = TextFormField(
+    final addressField = TextFormField(
       autofocus: false,
-      //only capital letter
-      controller: gstEditingController,
-      keyboardType: TextInputType.text,
+      controller: addressController,
+      validator: (value) => value!.isEmpty ? "Address cannot be Empty" : null,
+      textInputAction: TextInputAction.next,
+      decoration: _buildDecoration("Shop Address *", Icons.location_on),
+    );
+    final pinCodeField = TextFormField(
+      autofocus: false,
+      controller: pinCodeController,
+      keyboardType: TextInputType.number,
       validator: (value) {
-        if (value!.isEmpty) {
-          return ("GST cannot be Empty");
-        }
+        if (value!.isEmpty) return "Pincode cannot be Empty";
+        if (!RegExp(r'^.{5,}$').hasMatch(value)) return "Enter the valid Pin Code ";
         return null;
       },
       textInputAction: TextInputAction.next,
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.menu_book_outlined),
-        contentPadding: const EdgeInsets.all(0),
-        hintText: "GST No *",
-        hintStyle: hintStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+      decoration: _buildDecoration("Pin-Code *", Icons.scatter_plot),
+    );
+    final gstnumberField = TextFormField(
+      autofocus: false,
+      controller: gstEditingController,
+      keyboardType: TextInputType.text,
+      validator: (value) => value!.isEmpty ? "GST cannot be Empty" : null,
+      textInputAction: TextInputAction.next,
+      decoration: _buildDecoration("GST No *", Icons.menu_book_outlined),
+      inputFormatters: [UpperCaseTextFormatter()],
+    );
+
+    final uploadLogoBox = GestureDetector(
+      onTap: _pickLogo,
+      child: Container(
+        width: double.infinity,
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade400, width: 1),
+          borderRadius: BorderRadius.circular(8),
         ),
+        child: _companyLogo == null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_photo_alternate_outlined, size: 40, color: Colors.grey.shade600),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Upload Company Logo",
+                    style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                ],
+              )
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(_companyLogo!, fit: BoxFit.contain),
+              ),
       ),
-      inputFormatters: [
-        UpperCaseTextFormatter(),
-      ],
     );
 
     return Scaffold(
@@ -1023,7 +976,7 @@ class _SignUpState extends State<SignUp> {
           child: Container(
             color: Colors.white,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -1036,57 +989,68 @@ class _SignUpState extends State<SignUp> {
                       width: 150,
                       height: 30,
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 25),
                     companyField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     fullNameField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     emailField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     numberField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     stateField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     cityField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     addressField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     pinCodeField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     gstnumberField,
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                    uploadLogoBox,
+                    const SizedBox(height: 12),
                     Row(
                       children: <Widget>[
-                        Checkbox(
-                          activeColor: AppColors.titleColor,
-                          value: _isChecked,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _isChecked = value ?? false; // Updates the checkbox state
-                            });
-                          },
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: Checkbox(
+                            activeColor: const Color(0xFF4A4138),
+                            side: BorderSide(color: Colors.grey.shade700, width: 2),
+                            value: _isChecked,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                _isChecked = value ?? false;
+                              });
+                            },
+                          ),
                         ),
+                        const SizedBox(width: 12),
                         GestureDetector(
-                          onTap: () {
-                            _showTermsAndConditions();
-                          },
+                          onTap: _showTermsAndConditions,
                           child: Text(
-                            'I agree to the terms and conditions',
+                            "I agree to the terms and conditions",
                             style: TextStyle(
                               decoration: TextDecoration.underline,
-                              color: Colors.black,
-                              fontSize: 12,
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    AuthButton.authButton(
-                        text: 'Sign Up',
-                        context: context,
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
+                            if (!_isChecked) {
+                              Fluttertoast.showToast(msg: "Please agree to terms and conditions");
+                              return;
+                            }
                             signUp(
                                 name: nameController.text,
                                 email: emailController.text,
@@ -1094,15 +1058,31 @@ class _SignUpState extends State<SignUp> {
                                 pass: "",
                                 companyName: companyNameEditingController.text,
                                 gst: gstEditingController.text,
-                                city: selectedCity!,
-                                state: selectedState!,
+                                city: selectedCity ?? "",
+                                state: selectedState ?? "",
                                 pinCode: pinCodeController.text,
                                 holeMarks: hallmarksController.text,
                                 phone: phoneController.text);
                           }
                         },
-                        textColor: Colors.white),
-                    const SizedBox(height: 15),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4A4138),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "SUBSCRIBE",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),

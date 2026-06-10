@@ -1,10 +1,14 @@
-import 'package:briio_application/screens/auth/splash.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:briio_application/utils/colors.dart';
+import 'package:briio_application/utils/globel_veriable.dart';
+import 'package:briio_application/screens/pages/categories/main_category_screen.dart';
+import 'package:briio_application/screens/auth/sign_in.dart';
+import 'package:briio_application/screens/auth/splash.dart'; // Import Splash
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +16,7 @@ Future<void> main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
+
   runApp(const MyApp());
 }
 
@@ -45,7 +50,7 @@ class MyApp extends StatelessWidget {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           )),
-      home: const Splash(),
+      home: const Splash(), // Set Splash as home
     );
   }
 }

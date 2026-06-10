@@ -311,20 +311,9 @@ class _UploadImageDState extends State<UploadImageD> {
                 ),
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // WhatsApp functionality
-        },
-        backgroundColor: const Color(0xFF25D366), // WhatsApp Green
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: const Icon(
-          FontAwesomeIcons.whatsapp,
-          color: Colors.white,
-          size: 32,
-        ),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      // ...
+      // ),
     );
   }
 

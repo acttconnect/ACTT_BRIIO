@@ -37,7 +37,7 @@ class Wishlist {
     var data = jsonDecode(response.body.toString());
     if (response.statusCode == 200) {
       // Fluttertoast.showToast(msg: 'Succssfully Delete Product ');
-      Get.to(() => Wishlist());
+      // Get.to(() => Wishlist()); // Removed to prevent unwanted navigation
     }
     return DeleteWishListModel.fromJson(data);
   }
